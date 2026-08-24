@@ -1,0 +1,85 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PEAKEMI_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "relwithdebinfo",
+      "displayName": "Release with debug info",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "dev",
+      "displayName": "Developer (debug + sanitizers + tidy + -Werror)",
+      "inherits": "debug",
+      "cacheVariables": {
+        "PEAKEMI_ENABLE_SANITIZERS": "ON",
+        "PEAKEMI_ENABLE_CLANG_TIDY": "ON",
+        "PEAKEMI_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "Continuous integration",
+      "inherits": "relwithdebinfo",
+      "cacheVariables": { "PEAKEMI_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "ci-msvc",
+      "displayName": "Continuous integration (MSVC)",
+      "inherits": "ci",
+      "generator": "Ninja",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug",          "configurePreset": "debug" },
+    { "name": "release",        "configurePreset": "release" },
+    { "name": "relwithdebinfo", "configurePreset": "relwithdebinfo" },
+    { "name": "dev",            "configurePreset": "dev" },
+    { "name": "ci",             "configurePreset": "ci" }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    { "name": "debug", "inherits": "base", "configurePreset": "debug" },
+    { "name": "dev",   "inherits": "base", "configurePreset": "dev" },
+    { "name": "ci",    "inherits": "base", "configurePreset": "ci" }
+  ],
+  "workflowPresets": [
+    {
+      "name": "ci",
+      "steps": [
+        { "type": "configure", "name": "ci" },
+        { "type": "build",     "name": "ci" },
+        { "type": "test",      "name": "ci" }
+      ]
+    }
+  ]
+}

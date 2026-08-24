@@ -1,0 +1,97 @@
+---
+# PeakEmi C++ formatting — clang-format >= 16
+Language:        Cpp
+BasedOnStyle:    LLVM
+Standard:        c++20
+
+ColumnLimit:     100
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+AccessModifierOffset: -4
+NamespaceIndentation: None
+IndentPPDirectives: AfterHash
+
+PointerAlignment:       Left
+ReferenceAlignment:     Left
+DerivePointerAlignment: false
+
+AlignAfterOpenBracket:      Align
+AlignConsecutiveAssignments: false
+AlignEscapedNewlines:       Left
+AlignOperands:              Align
+AlignTrailingComments:      true
+
+AllowShortBlocksOnASingleLine:     Empty
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine:  Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine:    All
+AllowShortLoopsOnASingleLine:      false
+
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments:   false
+BinPackParameters:  false
+BreakBeforeBraces:  Custom
+BraceWrapping:
+  AfterClass:            true
+  AfterControlStatement: MultiLine
+  AfterEnum:             true
+  AfterFunction:         true
+  AfterNamespace:        false
+  AfterStruct:           true
+  AfterUnion:            true
+  AfterExternBlock:      false
+  BeforeCatch:           false
+  BeforeElse:            false
+  BeforeLambdaBody:      false
+  BeforeWhile:           false
+  IndentBraces:          false
+  SplitEmptyFunction:    false
+  SplitEmptyRecord:      false
+  SplitEmptyNamespace:   false
+BreakBeforeBinaryOperators:   None
+BreakBeforeTernaryOperators:  true
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList:         BeforeComma
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth:      4
+Cpp11BracedListStyle:         true
+EmptyLineBeforeAccessModifier: LogicalBlock
+FixNamespaceComments:         true
+IndentCaseLabels:             true
+InsertNewlineAtEOF:           true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep:          1
+PackConstructorInitializers:  CurrentLine
+QualifierAlignment:           Left
+ReflowComments:               true
+SeparateDefinitionBlocks:     Always
+SortUsingDeclarations:        true
+SpaceAfterCStyleCast:         false
+SpaceAfterTemplateKeyword:    false
+SpaceBeforeCpp11BracedList:   false
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeParens:            ControlStatements
+SpacesBeforeTrailingComments: 1
+SpacesInAngles:               Never
+
+# Include ordering: own header, project headers, Qt, other third party, std
+SortIncludes:  CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:    '^<peakemi/'
+    Priority: 2
+  - Regex:    '^<Q[A-Z]'
+    Priority: 3
+  - Regex:    '^<Qt[A-Za-z]+/'
+    Priority: 3
+  - Regex:    '^<(gtest|gmock|pybind11|nlohmann|libusb)'
+    Priority: 4
+  - Regex:    '^<[a-z_]+>$'
+    Priority: 5
+  - Regex:    '^<.*>'
+    Priority: 4
+  - Regex:    '.*'
+    Priority: 1
+IncludeIsMainRegex: '(_test|_tests)?$'

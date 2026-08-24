@@ -1,0 +1,21 @@
+peakemi_add_module(hal
+    QT_AUTOMOC
+    SOURCES
+        discovery/Discovery.cpp
+        registry/DriverRegistry.cpp
+        scpi/Scpi.cpp
+        transport/SerialScpiTransport.cpp
+        transport/TcpScpiTransport.cpp
+    HEADERS
+        include/peakemi/hal/Discovery.hpp
+        include/peakemi/hal/DriverRegistry.hpp
+        include/peakemi/hal/Scpi.hpp
+        include/peakemi/hal/SerialScpiTransport.hpp
+        include/peakemi/hal/TcpScpiTransport.hpp
+    PUBLIC
+        peakemi::core
+        Qt6::Core
+        Qt6::Network
+        Qt6::SerialPort
+    PRIVATE
+        Qt6::Concurrent)

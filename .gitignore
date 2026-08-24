@@ -1,0 +1,43 @@
+# Build output
+build/
+out/
+cmake-build-*/
+install/
+_deps/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+compile_commands.json
+
+# Qt generated
+*_autogen/
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*.qm
+
+# IDE / editor
+.vscode/
+.idea/
+.vs/
+*.user
+*.swp
+.cache/
+
+# macOS / Windows noise
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Artifacts
+*.app/
+*.dmg
+*.AppImage
+*.log
