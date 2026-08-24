@@ -1,0 +1,12 @@
+peakemi_add_module(drivers
+    SOURCES
+        BuiltInDrivers.cpp
+        scpi/ScpiAnalyzerDriver.cpp
+        simulated/SimulatedDriver.cpp
+    HEADERS
+        include/peakemi/drivers/ScpiAnalyzerDriver.hpp
+        include/peakemi/drivers/SimulatedDriver.hpp
+    PUBLIC
+        peakemi::core
+        peakemi::hal
+        Qt6::Core)

@@ -1,0 +1,65 @@
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/util/Version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/include/peakemi/core/Version.hpp"
+    @ONLY)
+
+peakemi_add_module(core
+    QT_AUTOMOC
+    SOURCES
+        corrections/CorrectionTable.cpp
+        domain/Capabilities.cpp
+        domain/InstrumentId.cpp
+        domain/Trace.cpp
+        domain/Units.cpp
+        engine/MeasurementEngine.cpp
+        engine/PeakDetector.cpp
+        engine/RunConfiguration.cpp
+        limits/CisprBands.cpp
+        limits/LimitCatalogue.cpp
+        limits/LimitEvaluator.cpp
+        limits/LimitLine.cpp
+        limits/LimitLineIo.cpp
+        ports/ITransport.cpp
+        session/JsonConversions.cpp
+        session/Session.cpp
+        session/SessionSerializer.cpp
+        util/AtomicFileWriter.cpp
+        util/Error.cpp
+        util/Logging.cpp
+        util/Time.cpp
+        util/Version.cpp
+    HEADERS
+        "${CMAKE_CURRENT_BINARY_DIR}/include/peakemi/core/Version.hpp"
+        include/peakemi/core/AbstractAnalyzerDriver.hpp
+        include/peakemi/core/AtomicFileWriter.hpp
+        include/peakemi/core/CancelToken.hpp
+        include/peakemi/core/Capabilities.hpp
+        include/peakemi/core/CisprBands.hpp
+        include/peakemi/core/CorrectionTable.hpp
+        include/peakemi/core/Disclaimer.hpp
+        include/peakemi/core/Error.hpp
+        include/peakemi/core/IReportRenderer.hpp
+        include/peakemi/core/ITransport.hpp
+        include/peakemi/core/InstrumentId.hpp
+        include/peakemi/core/LimitCatalogue.hpp
+        include/peakemi/core/LimitEvaluator.hpp
+        include/peakemi/core/LimitLine.hpp
+        include/peakemi/core/LimitLineIo.hpp
+        include/peakemi/core/Logging.hpp
+        include/peakemi/core/MeasurementEngine.hpp
+        include/peakemi/core/MeasurementPoint.hpp
+        include/peakemi/core/PeakDetector.hpp
+        include/peakemi/core/RunConfiguration.hpp
+        include/peakemi/core/Session.hpp
+        include/peakemi/core/SessionSerializer.hpp
+        include/peakemi/core/SweepParams.hpp
+        include/peakemi/core/Time.hpp
+        include/peakemi/core/Trace.hpp
+        include/peakemi/core/Units.hpp
+    PUBLIC
+        Qt6::Core
+    PRIVATE
+        nlohmann_json::nlohmann_json)
+
+# Version.hpp is generated, so its directory has to be on the public include path too.
+target_include_directories(peakemi_core PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/include")

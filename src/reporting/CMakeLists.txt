@@ -1,0 +1,13 @@
+peakemi_add_module(reporting
+    SOURCES
+        writers/CsvExporter.cpp
+        writers/PdfReportRenderer.cpp
+    HEADERS
+        include/peakemi/reporting/CsvExporter.hpp
+        include/peakemi/reporting/PdfReportRenderer.hpp
+    PUBLIC
+        peakemi::core
+        Qt6::Core
+        Qt6::Gui
+    PRIVATE
+        Qt6::PrintSupport)

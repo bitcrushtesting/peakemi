@@ -1,0 +1,24 @@
+// Generated from Version.hpp.in — do not edit the generated copy.
+#pragma once
+
+#include <string_view>
+
+namespace peakemi {
+
+/// Semantic version of the application, e.g. "0.1.0".
+inline constexpr std::string_view ProjectVersion = "@PROJECT_VERSION@";
+inline constexpr int ProjectVersionMajor = @PROJECT_VERSION_MAJOR@;
+inline constexpr int ProjectVersionMinor = @PROJECT_VERSION_MINOR@;
+inline constexpr int ProjectVersionPatch = @PROJECT_VERSION_PATCH@;
+
+/// Human readable application name, used for window titles and settings paths.
+inline constexpr std::string_view ProjectName = "@PROJECT_NAME@";
+
+/// Organisation used by QSettings and the platform config locations.
+inline constexpr std::string_view OrganizationName = "PeakEmi";
+inline constexpr std::string_view OrganizationDomain = "peakemi.org";
+
+/// One-line build identification: name, version and build configuration.
+[[nodiscard]] std::string_view buildIdentification();
+
+} // namespace peakemi
