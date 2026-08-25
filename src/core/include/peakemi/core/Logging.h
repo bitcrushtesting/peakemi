@@ -23,7 +23,7 @@ Q_DECLARE_LOGGING_CATEGORY(lcReport)
 /// the file exceeds @p maximumBytes. Returns the active log file path, or an
 /// empty string when the directory could not be created.
 QString installRotatingFileLogger(const QString& directory,
-                                  qint64 maximumBytes = 5 * 1024 * 1024,
+                                  qint64 maximumBytes = 5LL * 1024 * 1024,
                                   int keptFiles = 3);
 
 /// Path of the log file currently written, empty when no sink is installed.

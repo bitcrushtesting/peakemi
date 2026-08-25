@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <vector>
 
@@ -34,7 +35,7 @@ class MeasurementEngine : public QObject
     Q_OBJECT
 
 public:
-    enum class Phase
+    enum class Phase : std::uint8_t
     {
         Idle,
         Configured,

@@ -25,11 +25,15 @@ Checks: >
   -modernize-use-trailing-return-type,
   -readability-identifier-length,
   -readability-magic-numbers,
+  -readability-redundant-member-init,
   -readability-redundant-access-specifiers
 
 # Disabled above, in short:
 #   easily-swappable-parameters / identifier-length / magic-numbers  -> too noisy for DSP + Qt code
 #   use-trailing-return-type                                        -> conflicts with house style
+#   redundant-member-init                                           -> the domain structs initialise
+#                                                                      every member explicitly (Hertz
+#                                                                      start{}), which documents intent
 #   non-private-member-variables / redundant-access-specifiers      -> Qt classes legitimately differ
 #   pro-bounds-*, owning-memory, static-cast-downcast               -> unavoidable with Qt parent/child
 #                                                                      ownership and qobject_cast

@@ -340,7 +340,7 @@ void MeasurementEngine::start()
 
         auto scan = runPhase1();
         if (!scan) {
-            const Error error = scan.error();
+            const Error& error = scan.error();
             if (error.code == ErrorCode::Cancelled) {
                 emit runFinished(session);
                 finish(Phase::Aborted);
@@ -381,7 +381,7 @@ void MeasurementEngine::start()
             const auto& candidate = candidates[static_cast<std::size_t>(i)];
             auto point = verifyPeak(candidate, pass);
             if (!point) {
-                const Error error = point.error();
+                const Error& error = point.error();
                 autosave(session);
                 if (error.code == ErrorCode::Cancelled) {
                     emit runFinished(session);
