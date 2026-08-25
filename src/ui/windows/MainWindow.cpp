@@ -455,7 +455,7 @@ QString MainWindow::autosavePathFor(const QString& runId) const
     return directory + QStringLiteral("/run-") + runId + QStringLiteral(".peakemi.json");
 }
 
-void MainWindow::onConnectRequested(TransportDescriptor descriptor, QString driverId)
+void MainWindow::onConnectRequested(const TransportDescriptor& descriptor, const QString& driverId)
 {
     TransportPtr transport;
     DriverPtr driver;
@@ -537,7 +537,7 @@ void MainWindow::onPhaseChanged(MeasurementEngine::Phase phase)
     updateActionStates();
 }
 
-void MainWindow::onTraceAcquired(TracePtr trace)
+void MainWindow::onTraceAcquired(const TracePtr& trace)
 {
     if (!trace) {
         return;
@@ -584,7 +584,7 @@ void MainWindow::refreshMarkers()
     m_plot->setMarkers(markers);
 }
 
-void MainWindow::onPointMeasured(MeasurementPoint point)
+void MainWindow::onPointMeasured(const MeasurementPoint& point)
 {
     m_resultsDock->appendPoint(point);
 
@@ -619,7 +619,7 @@ void MainWindow::onProgress(int completed, int total, qint64 estimatedRemainingM
     }
 }
 
-void MainWindow::onRunFailed(Error error)
+void MainWindow::onRunFailed(const Error& error)
 {
     m_progress->setVisible(false);
     const auto message = QString::fromStdString(error.message());
@@ -627,7 +627,7 @@ void MainWindow::onRunFailed(Error error)
     QMessageBox::warning(this, tr("Run failed"), message);
 }
 
-void MainWindow::onRunFinished(Session session)
+void MainWindow::onRunFinished(const Session& session)
 {
     m_progress->setVisible(false);
     m_session.results = session.results;

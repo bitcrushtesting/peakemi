@@ -159,7 +159,8 @@ Result<std::vector<std::byte>> TcpScpiTransport::readBinaryBlock(std::chrono::mi
     if (!header) {
         return std::unexpected(header.error());
     }
-    const auto total = static_cast<qsizetype>(header->headerSize + header->payloadSize);
+    const auto total =
+        static_cast<qsizetype>(header->headerSize) + static_cast<qsizetype>(header->payloadSize);
     if (auto status = pump(timeout, cancel, [&] { return m_buffer.size() >= total; }); !status) {
         return std::unexpected(status.error());
     }

@@ -58,8 +58,13 @@ void ScpiAnalyzerDriver::close()
 {
     if (m_transport) {
         // Leave the instrument sweeping on its own rather than frozen in a
-        // single-sweep state the user cannot see (FR-RUN-5, NFR-UX-2).
-        (void)sendValue(m_dialect.continuousSweep, "ON");
+        // single-sweep state the user cannot see (FR-RUN-5, NFR-UX-2). A
+        // failure here is worth a log line but must not stop the disconnect:
+        // the transport is going away either way.
+        if (auto status = sendValue(m_dialect.continuousSweep, "ON"); !status) {
+            qCDebug(lcDriver) << "could not restore continuous sweep:"
+                              << QString::fromStdString(status.error().message());
+        }
         m_transport->close();
         m_transport.reset();
     }

@@ -122,7 +122,7 @@ Result<DriverPtr> DriverRegistry::createBestMatch(const InstrumentId& id) const
     return create(matches.front().driverId);
 }
 
-DriverRegistry::Matcher makeMatcher(std::string manufacturer,
+DriverRegistry::Matcher makeMatcher(std::string_view manufacturer,
                                     std::vector<std::string> modelPatterns)
 {
     return [vendor = lowered(manufacturer),

@@ -249,7 +249,7 @@ void InstrumentDock::startLanScan()
                               Q_ARG(peakemi::hal::LanDiscoveryWorker::Settings, settings));
 }
 
-void InstrumentDock::onInstrumentFound(hal::DiscoveredInstrument instrument)
+void InstrumentDock::onInstrumentFound(const hal::DiscoveredInstrument& instrument)
 {
     addInstrument(instrument, categoryFor(instrument.descriptor.kind));
     emit statusMessage(

@@ -1,0 +1,12 @@
+---
+# Test-only adjustments; everything else is inherited from the project root.
+InheritParentConfig: true
+
+# QVERIFY and QCOMPARE return from the test function when they fail, so
+#     QVERIFY(result.has_value());
+#     QCOMPARE(result->field, expected);
+# is safe. clang-tidy does not model the macros' early return and reports every
+# such access, so the check is off for tests only — it stays on for src/.
+Checks: >
+  -bugprone-unchecked-optional-access
+...

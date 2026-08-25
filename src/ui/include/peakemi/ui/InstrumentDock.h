@@ -38,7 +38,7 @@ private slots:
     void refreshSerialPorts();
     void startLanScan();
     void addManualAddress();
-    void onInstrumentFound(peakemi::hal::DiscoveredInstrument instrument);
+    void onInstrumentFound(const peakemi::hal::DiscoveredInstrument& instrument);
     void onScanFinished(int found, bool aborted);
     void connectSelected();
 
