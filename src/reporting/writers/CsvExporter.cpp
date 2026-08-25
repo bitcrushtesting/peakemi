@@ -1,8 +1,8 @@
-#include <peakemi/core/AtomicFileWriter.hpp>
-#include <peakemi/core/CisprBands.hpp>
-#include <peakemi/core/Disclaimer.hpp>
-#include <peakemi/core/Time.hpp>
-#include <peakemi/reporting/CsvExporter.hpp>
+#include <peakemi/core/AtomicFileWriter.h>
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/core/Disclaimer.h>
+#include <peakemi/core/Time.h>
+#include <peakemi/reporting/CsvExporter.h>
 
 #include <iomanip>
 #include <sstream>
@@ -57,9 +57,8 @@ void writeHeader(std::ostringstream& stream, const Session& session, const Instr
            << "# instrument: " << instrument.displayName() << '\n'
            << "# instrument_firmware: " << instrument.firmware << '\n';
     for (const auto& correction : session.config.corrections) {
-        stream << "# correction: " << correction.name << " ("
-               << correctionKindKey(correction.kind) << ", "
-               << (correction.enabled ? "applied" : "disabled") << ", "
+        stream << "# correction: " << correction.name << " (" << correctionKindKey(correction.kind)
+               << ", " << (correction.enabled ? "applied" : "disabled") << ", "
                << correction.points.size() << " points)\n";
     }
     for (const auto& limit : session.config.limits) {

@@ -1,4 +1,4 @@
-#include <peakemi/core/Logging.hpp>
+#include <peakemi/core/Logging.h>
 
 #include <QDateTime>
 #include <QDir>
@@ -32,11 +32,16 @@ int g_keptFiles = 3;
 [[nodiscard]] const char* levelName(QtMsgType type)
 {
     switch (type) {
-        case QtDebugMsg:    return "debug";
-        case QtInfoMsg:     return "info";
-        case QtWarningMsg:  return "warning";
-        case QtCriticalMsg: return "critical";
-        case QtFatalMsg:    return "fatal";
+        case QtDebugMsg:
+            return "debug";
+        case QtInfoMsg:
+            return "info";
+        case QtWarningMsg:
+            return "warning";
+        case QtCriticalMsg:
+            return "critical";
+        case QtFatalMsg:
+            return "fatal";
     }
     return "info";
 }
@@ -72,8 +77,8 @@ void fileMessageHandler(QtMsgType type, const QMessageLogContext& context, const
         return;
     }
     QTextStream stream{&file};
-    stream << QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs) << ' '
-           << levelName(type) << ' '
+    stream << QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs) << ' ' << levelName(type)
+           << ' '
            << (context.category != nullptr ? QString::fromUtf8(context.category)
                                            : QStringLiteral("default"))
            << " - " << message << '\n';

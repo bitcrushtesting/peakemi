@@ -1,4 +1,4 @@
-#include <peakemi/core/Error.hpp>
+#include <peakemi/core/Error.h>
 
 #include <array>
 

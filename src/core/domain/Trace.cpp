@@ -1,4 +1,4 @@
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/Trace.h>
 
 #include <algorithm>
 #include <cmath>
@@ -8,7 +8,8 @@ namespace peakemi {
 
 FrequencyAxis FrequencyAxis::linear(FrequencyRange range, int points)
 {
-    return FrequencyAxis{.start = range.start, .stop = range.stop, .points = points, .explicitPoints = {}};
+    return FrequencyAxis{
+        .start = range.start, .stop = range.stop, .points = points, .explicitPoints = {}};
 }
 
 int FrequencyAxis::size() const
@@ -48,16 +49,15 @@ int FrequencyAxis::nearestIndex(Hertz frequency) const
             return count - 1;
         }
         const auto upper = static_cast<int>(std::distance(explicitPoints.begin(), found));
-        const Hertz lowerDistance =
-            frequency - explicitPoints[static_cast<std::size_t>(upper) - 1];
+        const Hertz lowerDistance = frequency - explicitPoints[static_cast<std::size_t>(upper) - 1];
         const Hertz upperDistance = explicitPoints[static_cast<std::size_t>(upper)] - frequency;
         return lowerDistance <= upperDistance ? upper - 1 : upper;
     }
     if (count == 1 || stop == start) {
         return 0;
     }
-    const double fraction = static_cast<double>((frequency - start).value())
-                            / static_cast<double>((stop - start).value());
+    const double fraction = static_cast<double>((frequency - start).value()) /
+                            static_cast<double>((stop - start).value());
     const auto index = static_cast<int>(std::llround(fraction * static_cast<double>(count - 1)));
     return std::clamp(index, 0, count - 1);
 }
@@ -85,7 +85,8 @@ Status Trace::mergeMaxHold(const Trace& other)
                     "max-hold merge needs two traces on the same frequency axis");
     }
     if (other.unit != unit) {
-        return fail(ErrorCode::InvalidConfiguration, "max-hold merge needs matching amplitude units");
+        return fail(ErrorCode::InvalidConfiguration,
+                    "max-hold merge needs matching amplitude units");
     }
     for (std::size_t i = 0; i < amplitudes.size(); ++i) {
         amplitudes[i] = std::max(amplitudes[i], other.amplitudes[i]);

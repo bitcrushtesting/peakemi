@@ -1,8 +1,8 @@
 #pragma once
 
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/InstrumentId.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/InstrumentId.h>
+#include <peakemi/core/Units.h>
 
 #include <cstddef>
 #include <span>

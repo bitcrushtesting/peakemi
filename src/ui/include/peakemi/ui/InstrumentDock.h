@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/hal/Discovery.hpp>
+#include <peakemi/hal/Discovery.h>
 
 #include <QDockWidget>
 #include <QList>

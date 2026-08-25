@@ -1,8 +1,8 @@
 #pragma once
 
-#include <peakemi/core/AbstractAnalyzerDriver.hpp>
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/InstrumentId.hpp>
+#include <peakemi/core/AbstractAnalyzerDriver.h>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/InstrumentId.h>
 
 #include <functional>
 #include <mutex>

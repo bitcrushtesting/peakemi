@@ -1,5 +1,5 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/ui/RunController.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/ui/RunController.h>
 
 #include <QMetaObject>
 #include <QThread>
@@ -26,6 +26,12 @@ RunController::RunController(QObject* parent)
     connect(m_engine, &MeasurementEngine::runFinished, this, &RunController::runFinished);
     connect(m_engine, &MeasurementEngine::logMessage, this, &RunController::logMessage);
 
+    // Emitted from the worker thread, so this queued self-connection is what
+    // keeps the cached identity readable from the GUI thread.
+    connect(this, &RunController::instrumentIdentified, this, [this](const InstrumentId& identity) {
+        m_instrument = identity;
+    });
+
     m_thread->start();
 }
 
@@ -47,22 +53,21 @@ void RunController::connectInstrument(DriverPtr driver, TransportPtr transport)
         return;
     }
 
-    // Open and identify on the worker thread: opening a socket blocks.
+    // Open and identify on the worker thread: opening a socket blocks. The
+    // driver and transport are captured by value, so a disconnect racing with
+    // this call cannot pull them out from under the worker.
     QMetaObject::invokeMethod(
         m_engine,
-        [this] {
-            if (auto status = m_driver->open(m_transport); !status) {
+        [this, driver = m_driver, transport = m_transport] {
+            if (auto status = driver->open(transport); !status) {
                 emit runFailed(status.error());
-                m_driver.reset();
-                m_transport.reset();
                 emit connectionChanged(false);
                 return;
             }
-            if (auto identity = m_driver->identify()) {
-                m_instrument = *identity;
-                emit instrumentIdentified(m_instrument);
+            if (auto identity = driver->identify()) {
+                emit instrumentIdentified(*identity);
             }
-            m_engine->setDriver(m_driver);
+            m_engine->setDriver(driver);
             emit connectionChanged(true);
         },
         Qt::QueuedConnection);
@@ -166,12 +171,12 @@ void RunController::sendRawCommand(const QString& command)
 
     QMetaObject::invokeMethod(
         m_engine,
-        [this, command] {
+        [this, command, transport = m_transport, timeout = m_config.operationTimeout] {
             const auto text = command.toStdString();
             qCInfo(lcScpi).noquote() << "console >" << command;
-            if (auto status = m_transport->write(text); !status) {
-                emit rawResponse(QStringLiteral("< %1")
-                                     .arg(QString::fromStdString(status.error().message())));
+            if (auto status = transport->write(text); !status) {
+                emit rawResponse(
+                    QStringLiteral("< %1").arg(QString::fromStdString(status.error().message())));
                 return;
             }
             if (!command.contains(QLatin1Char('?'))) {
@@ -179,10 +184,10 @@ void RunController::sendRawCommand(const QString& command)
                 return;
             }
             const CancelToken cancel;
-            auto response = m_transport->read(m_config.operationTimeout, cancel);
+            auto response = transport->read(timeout, cancel);
             if (!response) {
-                emit rawResponse(QStringLiteral("< %1")
-                                     .arg(QString::fromStdString(response.error().message())));
+                emit rawResponse(
+                    QStringLiteral("< %1").arg(QString::fromStdString(response.error().message())));
                 return;
             }
             emit rawResponse(QStringLiteral("< %1").arg(QString::fromStdString(*response)));

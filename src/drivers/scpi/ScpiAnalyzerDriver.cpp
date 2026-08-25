@@ -1,6 +1,6 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/drivers/ScpiAnalyzerDriver.hpp>
-#include <peakemi/hal/Scpi.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/drivers/ScpiAnalyzerDriver.h>
+#include <peakemi/hal/Scpi.h>
 
 #include <cmath>
 #include <utility>
@@ -21,8 +21,7 @@ ScpiAnalyzerDriver::ScpiAnalyzerDriver(DriverInfo info,
     : m_dialect{std::move(dialect)}
     , m_info{std::move(info)}
     , m_capabilities{std::move(capabilities)}
-{
-}
+{}
 
 ScpiAnalyzerDriver::~ScpiAnalyzerDriver()
 {
@@ -90,11 +89,16 @@ Result<std::string> ScpiAnalyzerDriver::query(const std::string& command, const 
 std::string ScpiAnalyzerDriver::detectorKeyword(Detector detector) const
 {
     switch (detector) {
-        case Detector::Peak:      return m_dialect.peakDetector;
-        case Detector::QuasiPeak: return m_dialect.quasiPeakDetector;
-        case Detector::Average:   return m_dialect.averageDetector;
-        case Detector::Rms:       return m_dialect.rmsDetector;
-        case Detector::Sample:    return m_dialect.sampleDetector;
+        case Detector::Peak:
+            return m_dialect.peakDetector;
+        case Detector::QuasiPeak:
+            return m_dialect.quasiPeakDetector;
+        case Detector::Average:
+            return m_dialect.averageDetector;
+        case Detector::Rms:
+            return m_dialect.rmsDetector;
+        case Detector::Sample:
+            return m_dialect.sampleDetector;
     }
     return m_dialect.peakDetector;
 }
@@ -140,14 +144,17 @@ Status ScpiAnalyzerDriver::configureSweep(const SweepParams& requested)
     }
 
     if (requested.rbw > Hertz{0}) {
-        if (auto status = sendValue(m_dialect.resolutionBandwidth, scpi::formatHertz(requested.rbw));
-            !status) {
+        if (auto status =
+                sendValue(m_dialect.resolutionBandwidth, scpi::formatHertz(requested.rbw));
+            !status)
+        {
             return status;
         }
     }
     if (requested.vbw > Hertz{0}) {
         if (auto status = sendValue(m_dialect.videoBandwidth, scpi::formatHertz(requested.vbw));
-            !status) {
+            !status)
+        {
             return status;
         }
     }
@@ -161,7 +168,8 @@ Status ScpiAnalyzerDriver::configureSweep(const SweepParams& requested)
         }
         if (auto status =
                 sendValue(m_dialect.attenuation, scpi::formatDecibel(requested.attenuation));
-            !status) {
+            !status)
+        {
             return status;
         }
     }
@@ -268,34 +276,48 @@ void ScpiAnalyzerDriver::setTimeout(std::chrono::milliseconds timeout)
 
 DriverPtr makeSiglentSsaDriver()
 {
-    const DriverInfo info{.id = "siglent.ssa3000x",
-                          .name = "Siglent SSA3000X / SVA1000X",
-                          .vendor = "Siglent",
-                          .version = "1.0",
-                          .origin = "built-in",
-                          .supportedTransports = {TransportKind::Tcp,
-                                                  TransportKind::UsbTmc,
-                                                  TransportKind::Serial}};
-    const Capabilities capabilities{
-        .range = FrequencyRange{hertz(9000), gigahertz(3.2)},
-        .minimumPoints = 751,
-        .maximumPoints = 751,
-        .detectors = {Detector::Peak, Detector::QuasiPeak, Detector::Average, Detector::Rms,
-                      Detector::Sample},
-        .resolutionBandwidths = {hertz(10), hertz(30), hertz(100), hertz(300), kilohertz(1),
-                                 kilohertz(3), kilohertz(10), kilohertz(30), kilohertz(100),
-                                 kilohertz(300), megahertz(1)},
-        .videoBandwidths = {hertz(1), hertz(10), hertz(100), kilohertz(1), kilohertz(10),
-                            kilohertz(100), megahertz(1)},
-        .minimumAttenuation = decibel(0.0),
-        .maximumAttenuation = decibel(31.0),
-        .attenuationStep = decibel(1.0),
-        .minimumRefLevel = decibel(-100.0),
-        .maximumRefLevel = decibel(130.0),
-        .preamp = true,
-        .trackingGenerator = true,
-        .zeroSpan = true,
-        .nativeUnit = AmplitudeUnit::dBuV};
+    const DriverInfo info{
+        .id = "siglent.ssa3000x",
+        .name = "Siglent SSA3000X / SVA1000X",
+        .vendor = "Siglent",
+        .version = "1.0",
+        .origin = "built-in",
+        .supportedTransports = {TransportKind::Tcp, TransportKind::UsbTmc, TransportKind::Serial}};
+    const Capabilities capabilities{.range = FrequencyRange{hertz(9000), gigahertz(3.2)},
+                                    .minimumPoints = 751,
+                                    .maximumPoints = 751,
+                                    .detectors = {Detector::Peak,
+                                                  Detector::QuasiPeak,
+                                                  Detector::Average,
+                                                  Detector::Rms,
+                                                  Detector::Sample},
+                                    .resolutionBandwidths = {hertz(10),
+                                                             hertz(30),
+                                                             hertz(100),
+                                                             hertz(300),
+                                                             kilohertz(1),
+                                                             kilohertz(3),
+                                                             kilohertz(10),
+                                                             kilohertz(30),
+                                                             kilohertz(100),
+                                                             kilohertz(300),
+                                                             megahertz(1)},
+                                    .videoBandwidths = {hertz(1),
+                                                        hertz(10),
+                                                        hertz(100),
+                                                        kilohertz(1),
+                                                        kilohertz(10),
+                                                        kilohertz(100),
+                                                        megahertz(1)},
+                                    .minimumAttenuation = decibel(0.0),
+                                    .maximumAttenuation = decibel(31.0),
+                                    .attenuationStep = decibel(1.0),
+                                    .minimumRefLevel = decibel(-100.0),
+                                    .maximumRefLevel = decibel(130.0),
+                                    .preamp = true,
+                                    .trackingGenerator = true,
+                                    .zeroSpan = true,
+                                    .nativeUnit = AmplitudeUnit::dBuV};
     return std::make_shared<ScpiAnalyzerDriver>(info, capabilities, ScpiDialect{});
 }
 
@@ -307,26 +329,42 @@ DriverPtr makeRigolDsaDriver()
                           .version = "1.0",
                           .origin = "built-in",
                           .supportedTransports = {TransportKind::Tcp, TransportKind::UsbTmc}};
-    const Capabilities capabilities{
-        .range = FrequencyRange{hertz(9000), gigahertz(1.5)},
-        .minimumPoints = 601,
-        .maximumPoints = 601,
-        .detectors = {Detector::Peak, Detector::QuasiPeak, Detector::Average, Detector::Rms,
-                      Detector::Sample},
-        .resolutionBandwidths = {hertz(10), hertz(30), hertz(100), hertz(300), kilohertz(1),
-                                 kilohertz(3), kilohertz(10), kilohertz(30), kilohertz(100),
-                                 kilohertz(300), megahertz(1)},
-        .videoBandwidths = {hertz(1), hertz(10), hertz(100), kilohertz(1), kilohertz(10),
-                            kilohertz(100), megahertz(1), megahertz(3)},
-        .minimumAttenuation = decibel(0.0),
-        .maximumAttenuation = decibel(30.0),
-        .attenuationStep = decibel(1.0),
-        .minimumRefLevel = decibel(-100.0),
-        .maximumRefLevel = decibel(120.0),
-        .preamp = true,
-        .trackingGenerator = true,
-        .zeroSpan = true,
-        .nativeUnit = AmplitudeUnit::dBuV};
+    const Capabilities capabilities{.range = FrequencyRange{hertz(9000), gigahertz(1.5)},
+                                    .minimumPoints = 601,
+                                    .maximumPoints = 601,
+                                    .detectors = {Detector::Peak,
+                                                  Detector::QuasiPeak,
+                                                  Detector::Average,
+                                                  Detector::Rms,
+                                                  Detector::Sample},
+                                    .resolutionBandwidths = {hertz(10),
+                                                             hertz(30),
+                                                             hertz(100),
+                                                             hertz(300),
+                                                             kilohertz(1),
+                                                             kilohertz(3),
+                                                             kilohertz(10),
+                                                             kilohertz(30),
+                                                             kilohertz(100),
+                                                             kilohertz(300),
+                                                             megahertz(1)},
+                                    .videoBandwidths = {hertz(1),
+                                                        hertz(10),
+                                                        hertz(100),
+                                                        kilohertz(1),
+                                                        kilohertz(10),
+                                                        kilohertz(100),
+                                                        megahertz(1),
+                                                        megahertz(3)},
+                                    .minimumAttenuation = decibel(0.0),
+                                    .maximumAttenuation = decibel(30.0),
+                                    .attenuationStep = decibel(1.0),
+                                    .minimumRefLevel = decibel(-100.0),
+                                    .maximumRefLevel = decibel(120.0),
+                                    .preamp = true,
+                                    .trackingGenerator = true,
+                                    .zeroSpan = true,
+                                    .nativeUnit = AmplitudeUnit::dBuV};
 
     return std::make_shared<ScpiAnalyzerDriver>(info, capabilities, ScpiDialect{});
 }

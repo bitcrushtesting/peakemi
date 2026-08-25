@@ -1,5 +1,5 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/hal/DriverRegistry.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/hal/DriverRegistry.h>
 
 #include <algorithm>
 #include <cctype>
@@ -41,9 +41,10 @@ DriverRegistry& DriverRegistry::instance()
 void DriverRegistry::registerDriver(Entry entry)
 {
     const std::lock_guard<std::mutex> lock{m_mutex};
-    const auto existing = std::find_if(m_entries.begin(), m_entries.end(), [&](const Entry& stored) {
-        return stored.info.id == entry.info.id;
-    });
+    const auto existing =
+        std::find_if(m_entries.begin(), m_entries.end(), [&](const Entry& stored) {
+            return stored.info.id == entry.info.id;
+        });
     if (existing != m_entries.end()) {
         *existing = std::move(entry);
         return;
@@ -96,9 +97,8 @@ std::vector<DriverRegistry::Match> DriverRegistry::match(const InstrumentId& id)
     for (const auto& entry : m_entries) {
         const int score = entry.matcher ? entry.matcher(id) : 0;
         if (score > 0) {
-            matches.push_back(Match{.driverId = entry.info.id,
-                                    .driverName = entry.info.name,
-                                    .score = score});
+            matches.push_back(
+                Match{.driverId = entry.info.id, .driverName = entry.info.name, .score = score});
         }
     }
     std::stable_sort(matches.begin(), matches.end(), [](const Match& a, const Match& b) {
@@ -116,13 +116,14 @@ Result<DriverPtr> DriverRegistry::createBestMatch(const InstrumentId& id) const
     }
     if (matches.size() > 1 && matches[0].score == matches[1].score) {
         return fail(ErrorCode::NoDriverMatch,
-                    "drivers '" + matches[0].driverId + "' and '" + matches[1].driverId
-                        + "' claim '" + id.raw + "' equally; select one manually");
+                    "drivers '" + matches[0].driverId + "' and '" + matches[1].driverId +
+                        "' claim '" + id.raw + "' equally; select one manually");
     }
     return create(matches.front().driverId);
 }
 
-DriverRegistry::Matcher makeMatcher(std::string manufacturer, std::vector<std::string> modelPatterns)
+DriverRegistry::Matcher makeMatcher(std::string manufacturer,
+                                    std::vector<std::string> modelPatterns)
 {
     return [vendor = lowered(manufacturer),
             patterns = std::move(modelPatterns)](const InstrumentId& id) {

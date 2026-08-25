@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/Units.h>
 
 #include <cstdint>
 #include <string>
@@ -47,8 +47,8 @@ struct LimitPoint
 struct LimitLine
 {
     std::string name;
-    std::string standard;  ///< e.g. "CISPR 32:2015 / EN 55032"
-    std::string note;      ///< edition, table reference, provenance
+    std::string standard; ///< e.g. "CISPR 32:2015 / EN 55032"
+    std::string note;     ///< edition, table reference, provenance
     EmissionKind kind{EmissionKind::Radiated};
     EquipmentClass equipmentClass{EquipmentClass::Unspecified};
     Detector detector{Detector::QuasiPeak};

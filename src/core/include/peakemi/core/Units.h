@@ -58,7 +58,10 @@ using Hertz = Quantity<struct HertzTag, std::int64_t>;
 /// A level or a difference of levels in decibels.
 using Decibel = Quantity<struct DecibelTag, double>;
 
-[[nodiscard]] constexpr Hertz hertz(std::int64_t value) { return Hertz{value}; }
+[[nodiscard]] constexpr Hertz hertz(std::int64_t value)
+{
+    return Hertz{value};
+}
 
 [[nodiscard]] constexpr Hertz kilohertz(double value)
 {
@@ -75,7 +78,10 @@ using Decibel = Quantity<struct DecibelTag, double>;
     return Hertz{static_cast<std::int64_t>(value * 1e9 + (value < 0.0 ? -0.5 : 0.5))};
 }
 
-[[nodiscard]] constexpr Decibel decibel(double value) { return Decibel{value}; }
+[[nodiscard]] constexpr Decibel decibel(double value)
+{
+    return Decibel{value};
+}
 
 [[nodiscard]] constexpr double toMegahertz(Hertz frequency)
 {
@@ -144,9 +150,7 @@ enum class Verdict : std::uint8_t
 /// dBuV/m is a field strength: it relates to a voltage reading only through an
 /// antenna factor, so it converts to nothing but itself and the function
 /// returns std::nullopt rather than inventing a number (FR-VIS-3).
-[[nodiscard]] std::optional<double> convertAmplitude(double value,
-                                                     AmplitudeUnit from,
-                                                     AmplitudeUnit to,
-                                                     double impedanceOhms = 50.0);
+[[nodiscard]] std::optional<double>
+convertAmplitude(double value, AmplitudeUnit from, AmplitudeUnit to, double impedanceOhms = 50.0);
 
 } // namespace peakemi

@@ -1,6 +1,6 @@
-#include <peakemi/core/LimitCatalogue.hpp>
-#include <peakemi/core/LimitLineIo.hpp>
-#include <peakemi/ui/RunConfigDock.hpp>
+#include <peakemi/core/LimitCatalogue.h>
+#include <peakemi/core/LimitLineIo.h>
+#include <peakemi/ui/RunConfigDock.h>
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -16,8 +16,8 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
-#include <QStandardItemModel>
 #include <QSpinBox>
+#include <QStandardItemModel>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -194,7 +194,8 @@ void RunConfigDock::buildWidgets()
     auto* importCorrection = new QPushButton{tr("Import…"), correctionGroup};
     connect(importCorrection, &QPushButton::clicked, this, &RunConfigDock::importCorrectionTable);
     auto* removeCorrection = new QPushButton{tr("Remove"), correctionGroup};
-    connect(removeCorrection, &QPushButton::clicked, this, &RunConfigDock::removeSelectedCorrection);
+    connect(
+        removeCorrection, &QPushButton::clicked, this, &RunConfigDock::removeSelectedCorrection);
     correctionButtons->addWidget(importCorrection);
     correctionButtons->addWidget(removeCorrection);
     correctionLayout->addLayout(correctionButtons);
@@ -244,8 +245,9 @@ std::vector<LimitLine> RunConfigDock::selectedLimits() const
 {
     std::vector<LimitLine> limits;
     for (int row = 0; row < m_limits->count(); ++row) {
-        if (m_limits->item(row)->checkState() == Qt::Checked
-            && row < static_cast<int>(m_availableLimits.size())) {
+        if (m_limits->item(row)->checkState() == Qt::Checked &&
+            row < static_cast<int>(m_availableLimits.size()))
+        {
             limits.push_back(m_availableLimits[static_cast<std::size_t>(row)]);
         }
     }
@@ -255,8 +257,8 @@ std::vector<LimitLine> RunConfigDock::selectedLimits() const
 RunConfiguration RunConfigDock::configuration() const
 {
     RunConfiguration config;
-    config.span = FrequencyRange{megahertz(m_startFrequency->value()),
-                                 megahertz(m_stopFrequency->value())};
+    config.span =
+        FrequencyRange{megahertz(m_startFrequency->value()), megahertz(m_stopFrequency->value())};
     config.phase1Points = m_points->value();
     config.phase1Detector = detectorOf(m_phase1Detector);
     config.phase1Rbw = hertz(m_resolutionBandwidth->currentData().toLongLong());
@@ -277,9 +279,10 @@ RunConfiguration RunConfigDock::configuration() const
 
     config.limits = selectedLimits();
     config.corrections = m_correctionTables;
-    for (int row = 0; row < m_corrections->count()
-                      && row < static_cast<int>(config.corrections.size());
-         ++row) {
+    for (int row = 0;
+         row < m_corrections->count() && row < static_cast<int>(config.corrections.size());
+         ++row)
+    {
         config.corrections[static_cast<std::size_t>(row)].enabled =
             m_corrections->item(row)->checkState() == Qt::Checked;
     }
@@ -312,10 +315,10 @@ void RunConfigDock::setConfiguration(const RunConfiguration& config)
 
     if (!config.limits.empty()) {
         for (const auto& limit : config.limits) {
-            const auto existing = std::find_if(m_availableLimits.begin(), m_availableLimits.end(),
-                                               [&](const LimitLine& stored) {
-                                                   return stored.name == limit.name;
-                                               });
+            const auto existing =
+                std::find_if(m_availableLimits.begin(),
+                             m_availableLimits.end(),
+                             [&](const LimitLine& stored) { return stored.name == limit.name; });
             if (existing == m_availableLimits.end()) {
                 m_availableLimits.push_back(limit);
                 auto* item = new QListWidgetItem{QString::fromStdString(limit.name), m_limits};
@@ -379,10 +382,7 @@ void RunConfigDock::setEditingEnabled(bool enabled)
 void RunConfigDock::importLimitLine()
 {
     const auto path = QFileDialog::getOpenFileName(
-        this,
-        tr("Import limit line"),
-        {},
-        tr("Limit files (*.csv *.json);;All files (*)"));
+        this, tr("Import limit line"), {}, tr("Limit files (*.csv *.json);;All files (*)"));
     if (path.isEmpty()) {
         return;
     }
@@ -408,11 +408,11 @@ void RunConfigDock::importLimitLine()
 
 void RunConfigDock::importCorrectionTable()
 {
-    const auto path = QFileDialog::getOpenFileName(
-        this,
-        tr("Import correction table"),
-        {},
-        tr("Correction files (*.csv *.json);;All files (*)"));
+    const auto path =
+        QFileDialog::getOpenFileName(this,
+                                     tr("Import correction table"),
+                                     {},
+                                     tr("Correction files (*.csv *.json);;All files (*)"));
     if (path.isEmpty()) {
         return;
     }

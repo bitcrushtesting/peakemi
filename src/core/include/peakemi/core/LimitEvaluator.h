@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/LimitLine.hpp>
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/LimitLine.h>
+#include <peakemi/core/Trace.h>
 
 #include <span>
 #include <vector>
@@ -12,11 +12,11 @@ namespace peakemi {
 struct MarginResult
 {
     Hertz frequency{};
-    double amplitude{};   ///< corrected measurement, in the trace unit
-    double limit{};       ///< NaN when no active limit covers this frequency
-    double marginDb{};    ///< limit - amplitude; positive means below the limit
+    double amplitude{}; ///< corrected measurement, in the trace unit
+    double limit{};     ///< NaN when no active limit covers this frequency
+    double marginDb{};  ///< limit - amplitude; positive means below the limit
     Verdict verdict{Verdict::Unknown};
-    int limitIndex{-1};   ///< index into the evaluator's limit lines, -1 if none
+    int limitIndex{-1}; ///< index into the evaluator's limit lines, -1 if none
 };
 
 /// Worst case over a set of margins, with the frequency where it occurred.

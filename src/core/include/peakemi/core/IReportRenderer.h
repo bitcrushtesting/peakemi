@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/Session.hpp>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/Session.h>
 
 #include <QString>
 
@@ -34,9 +34,8 @@ public:
     IReportRenderer(IReportRenderer&&) = delete;
     IReportRenderer& operator=(IReportRenderer&&) = delete;
 
-    [[nodiscard]] virtual Status render(const Session& session,
-                                        const ReportTemplate& reportTemplate,
-                                        const QString& path) = 0;
+    [[nodiscard]] virtual Status
+    render(const Session& session, const ReportTemplate& reportTemplate, const QString& path) = 0;
 };
 
 } // namespace peakemi

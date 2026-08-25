@@ -1,4 +1,4 @@
-#include <peakemi/core/PeakDetector.hpp>
+#include <peakemi/core/PeakDetector.h>
 
 #include <algorithm>
 #include <cmath>
@@ -79,26 +79,24 @@ std::vector<PeakCandidate> detectPeaks(const Trace& trace,
             continue;
         }
 
-        candidates.push_back(PeakCandidate{.index = index,
-                                           .frequency = margin.frequency,
-                                           .amplitude = margin.amplitude,
-                                           .limit = margin.limit,
-                                           .marginDb = hasLimit
-                                                           ? margin.marginDb
-                                                           : std::numeric_limits<double>::infinity(),
-                                           .prominenceDb = peakProminence,
-                                           .verdict = margin.verdict});
+        candidates.push_back(PeakCandidate{
+            .index = index,
+            .frequency = margin.frequency,
+            .amplitude = margin.amplitude,
+            .limit = margin.limit,
+            .marginDb = hasLimit ? margin.marginDb : std::numeric_limits<double>::infinity(),
+            .prominenceDb = peakProminence,
+            .verdict = margin.verdict});
     }
 
     // Rank by criticality: smallest margin first, strongest signal as tie break.
-    std::stable_sort(candidates.begin(),
-                     candidates.end(),
-                     [](const PeakCandidate& a, const PeakCandidate& b) {
-                         if (a.marginDb != b.marginDb) {
-                             return a.marginDb < b.marginDb;
-                         }
-                         return a.amplitude > b.amplitude;
-                     });
+    std::stable_sort(
+        candidates.begin(), candidates.end(), [](const PeakCandidate& a, const PeakCandidate& b) {
+            if (a.marginDb != b.marginDb) {
+                return a.marginDb < b.marginDb;
+            }
+            return a.amplitude > b.amplitude;
+        });
 
     // De-duplicate by minimum spacing, keeping the more critical peak (FR-RUN-2).
     std::vector<PeakCandidate> kept;

@@ -1,8 +1,8 @@
-#include <peakemi/core/CisprBands.hpp>
-#include <peakemi/core/Disclaimer.hpp>
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/core/Time.hpp>
-#include <peakemi/reporting/PdfReportRenderer.hpp>
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/core/Disclaimer.h>
+#include <peakemi/core/Logging.h>
+#include <peakemi/core/Time.h>
+#include <peakemi/reporting/PdfReportRenderer.h>
 
 #include <QColor>
 #include <QFileInfo>
@@ -18,7 +18,7 @@
 namespace peakemi::reporting {
 namespace {
 
-constexpr int Resolution = 300;                 // dots per inch
+constexpr int Resolution = 300; // dots per inch
 constexpr double MarginMm = 15.0;
 constexpr double LineHeightMm = 5.0;
 constexpr double SmallLineHeightMm = 4.2;
@@ -31,10 +31,14 @@ constexpr double SmallLineHeightMm = 4.2;
 [[nodiscard]] QColor verdictColour(Verdict verdict)
 {
     switch (verdict) {
-        case Verdict::Pass:     return QColor{0xE6, 0xF4, 0xEA};
-        case Verdict::Marginal: return QColor{0xFE, 0xF7, 0xE0};
-        case Verdict::Fail:     return QColor{0xFC, 0xE8, 0xE6};
-        case Verdict::Unknown:  break;
+        case Verdict::Pass:
+            return QColor{0xE6, 0xF4, 0xEA};
+        case Verdict::Marginal:
+            return QColor{0xFE, 0xF7, 0xE0};
+        case Verdict::Fail:
+            return QColor{0xFC, 0xE8, 0xE6};
+        case Verdict::Unknown:
+            break;
     }
     return QColor{0xF5, 0xF5, 0xF5};
 }
@@ -46,8 +50,7 @@ constexpr double SmallLineHeightMm = 4.2;
 
 [[nodiscard]] QString number(double value, int precision = 2)
 {
-    return std::isfinite(value) ? QString::number(value, 'f', precision)
-                                : QStringLiteral("--");
+    return std::isfinite(value) ? QString::number(value, 'f', precision) : QStringLiteral("--");
 }
 
 /// Sequential page layout: a cursor that knows how to start a new page.
@@ -61,12 +64,14 @@ public:
         , m_right{writer.width() - toDots(MarginMm)}
         , m_bottom{writer.height() - toDots(MarginMm + 8.0)}
         , m_y{toDots(MarginMm)}
-    {
-    }
+    {}
 
     [[nodiscard]] int left() const { return m_left; }
+
     [[nodiscard]] int right() const { return m_right; }
+
     [[nodiscard]] int width() const { return m_right - m_left; }
+
     [[nodiscard]] int y() const { return m_y; }
 
     void advance(double millimetres) { m_y += toDots(millimetres); }
@@ -168,8 +173,8 @@ Status PdfReportRenderer::render(const Session& session,
     writer.setPageSize(QPageSize{QPageSize::A4});
     writer.setResolution(Resolution);
     writer.setTitle(qs(reportTemplate.title));
-    writer.setCreator(QStringLiteral("PeakEmi %1")
-                          .arg(QString::fromStdString(session.meta.applicationVersion)));
+    writer.setCreator(
+        QStringLiteral("PeakEmi %1").arg(QString::fromStdString(session.meta.applicationVersion)));
 
     QPainter painter;
     if (!painter.begin(&writer)) {
@@ -212,25 +217,61 @@ Status PdfReportRenderer::render(const Session& session,
     }
     cursor.advance(3.0);
 
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Equipment under test"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Equipment under test"),
                  QString::fromStdString(session.meta.eutName));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Serial number"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Serial number"),
                  QString::fromStdString(session.meta.eutSerial));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Operating mode"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Operating mode"),
                  QString::fromStdString(session.meta.eutOperatingMode));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Test setup"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Test setup"),
                  QString::fromStdString(session.meta.testSetup));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Operator"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Operator"),
                  QString::fromStdString(session.meta.operatorName));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Run identifier"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Run identifier"),
                  QString::fromStdString(session.meta.runId));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Date"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Date"),
                  QString::fromStdString(toIso8601(session.meta.createdAt)));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Application"),
-                 QStringLiteral("PeakEmi %1")
-                     .arg(QString::fromStdString(session.meta.applicationVersion)));
+    drawKeyValue(
+        painter,
+        cursor,
+        keyFont,
+        bodyFont,
+        QObject::tr("Application"),
+        QStringLiteral("PeakEmi %1").arg(QString::fromStdString(session.meta.applicationVersion)));
     if (!session.results.empty()) {
-        drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Overall result"),
+        drawKeyValue(painter,
+                     cursor,
+                     keyFont,
+                     bodyFont,
+                     QObject::tr("Overall result"),
                      qs(verdictKey(session.overallVerdict())).toUpper());
     }
     cursor.advance(4.0);
@@ -248,25 +289,52 @@ Status PdfReportRenderer::render(const Session& session,
     cursor.advance(3.0);
     cursor.text(QObject::tr("Test configuration"), headingFont);
     const auto& config = session.config;
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Scan span"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Scan span"),
                  QStringLiteral("%1 MHz - %2 MHz")
                      .arg(number(toMegahertz(config.span.start), 4),
                           number(toMegahertz(config.span.stop), 4)));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Phase 1 detector"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Phase 1 detector"),
                  qs(detectorKey(config.phase1Detector)));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Phase 2 detector"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Phase 2 detector"),
                  qs(detectorKey(config.verificationDetector)));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Dwell time"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Dwell time"),
                  QStringLiteral("%1 ms").arg(config.dwellTime.count()));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Peak threshold"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Peak threshold"),
                  QStringLiteral("%1 dB to limit").arg(number(config.peaks.marginThresholdDb, 1)));
-    drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Marginal threshold"),
+    drawKeyValue(painter,
+                 cursor,
+                 keyFont,
+                 bodyFont,
+                 QObject::tr("Marginal threshold"),
                  QStringLiteral("%1 dB").arg(number(config.marginalThresholdDb, 1)));
     for (const auto& limit : config.limits) {
-        drawKeyValue(painter, cursor, keyFont, bodyFont, QObject::tr("Limit line"),
-                     QStringLiteral("%1 (%2)")
-                         .arg(QString::fromStdString(limit.name),
-                              QString::fromStdString(limit.standard)));
+        drawKeyValue(painter,
+                     cursor,
+                     keyFont,
+                     bodyFont,
+                     QObject::tr("Limit line"),
+                     QStringLiteral("%1 (%2)").arg(QString::fromStdString(limit.name),
+                                                   QString::fromStdString(limit.standard)));
     }
 
     // --- Plot ---------------------------------------------------------------
@@ -292,30 +360,29 @@ Status PdfReportRenderer::render(const Session& session,
                                          QObject::tr("Verdict")};
     const std::array<double, 7> weights{0.20, 0.14, 0.10, 0.13, 0.15, 0.14, 0.14};
 
-    const auto drawRow = [&](const std::array<QString, 7>& cells,
-                             const QColor& background,
-                             const QFont& font) {
-        cursor.ensure(SmallLineHeightMm);
-        const int rowHeight = toDots(SmallLineHeightMm);
-        int x = cursor.left();
-        painter.setFont(font);
-        for (std::size_t i = 0; i < cells.size(); ++i) {
-            const int cellWidth = static_cast<int>(weights[i] * cursor.width());
-            const QRectF cell{static_cast<double>(x),
-                              static_cast<double>(cursor.y()),
-                              static_cast<double>(cellWidth),
-                              static_cast<double>(rowHeight)};
-            painter.fillRect(cell, background);
-            painter.setPen(QColor{0xCC, 0xCC, 0xCC});
-            painter.drawRect(cell);
-            painter.setPen(Qt::black);
-            painter.drawText(cell.adjusted(toDots(1.0), 0, -toDots(1.0), 0),
-                             Qt::AlignLeft | Qt::AlignVCenter,
-                             cells[i]);
-            x += cellWidth;
-        }
-        cursor.advance(SmallLineHeightMm);
-    };
+    const auto drawRow =
+        [&](const std::array<QString, 7>& cells, const QColor& background, const QFont& font) {
+            cursor.ensure(SmallLineHeightMm);
+            const int rowHeight = toDots(SmallLineHeightMm);
+            int x = cursor.left();
+            painter.setFont(font);
+            for (std::size_t i = 0; i < cells.size(); ++i) {
+                const int cellWidth = static_cast<int>(weights[i] * cursor.width());
+                const QRectF cell{static_cast<double>(x),
+                                  static_cast<double>(cursor.y()),
+                                  static_cast<double>(cellWidth),
+                                  static_cast<double>(rowHeight)};
+                painter.fillRect(cell, background);
+                painter.setPen(QColor{0xCC, 0xCC, 0xCC});
+                painter.drawRect(cell);
+                painter.setPen(Qt::black);
+                painter.drawText(cell.adjusted(toDots(1.0), 0, -toDots(1.0), 0),
+                                 Qt::AlignLeft | Qt::AlignVCenter,
+                                 cells[i]);
+                x += cellWidth;
+            }
+            cursor.advance(SmallLineHeightMm);
+        };
 
     drawRow(headers, QColor{0xEE, 0xEE, 0xEE}, keyFont);
     if (session.results.empty()) {
@@ -338,13 +405,13 @@ Status PdfReportRenderer::render(const Session& session,
         cursor.advance(4.0);
         cursor.text(QObject::tr("Applied corrections"), headingFont);
         for (const auto& correction : config.corrections) {
-            cursor.text(QStringLiteral("%1 - %2 (%3)")
-                            .arg(QString::fromStdString(correction.name),
-                                 qs(correctionKindKey(correction.kind)),
-                                 correction.enabled ? QObject::tr("applied")
-                                                    : QObject::tr("disabled")),
-                        keyFont,
-                        SmallLineHeightMm);
+            cursor.text(
+                QStringLiteral("%1 - %2 (%3)")
+                    .arg(QString::fromStdString(correction.name),
+                         qs(correctionKindKey(correction.kind)),
+                         correction.enabled ? QObject::tr("applied") : QObject::tr("disabled")),
+                keyFont,
+                SmallLineHeightMm);
             for (const auto& [frequency, value] : correction.points) {
                 cursor.text(QStringLiteral("    %1 MHz: %2 dB")
                                 .arg(number(toMegahertz(frequency), 4), number(value)),

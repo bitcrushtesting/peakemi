@@ -1,4 +1,4 @@
-// Generated from Version.hpp.in — do not edit the generated copy.
+// Generated from Version.h.in — do not edit the generated copy.
 #pragma once
 
 #include <string_view>

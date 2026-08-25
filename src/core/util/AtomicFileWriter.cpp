@@ -1,4 +1,4 @@
-#include <peakemi/core/AtomicFileWriter.hpp>
+#include <peakemi/core/AtomicFileWriter.h>
 
 #include <QDir>
 #include <QFile>
@@ -21,8 +21,7 @@ Status writeFileAtomically(const QString& path, std::string_view content)
         return fail(ErrorCode::IoFailure,
                     path.toStdString() + ": " + file.errorString().toStdString());
     }
-    const auto written =
-        file.write(content.data(), static_cast<qint64>(content.size()));
+    const auto written = file.write(content.data(), static_cast<qint64>(content.size()));
     if (written != static_cast<qint64>(content.size())) {
         file.cancelWriting();
         return fail(ErrorCode::IoFailure, path.toStdString() + ": short write");

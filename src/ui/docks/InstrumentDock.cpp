@@ -1,12 +1,13 @@
-#include <peakemi/drivers/SimulatedDriver.hpp>
-#include <peakemi/hal/DriverRegistry.hpp>
-#include <peakemi/ui/InstrumentDock.hpp>
+#include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/hal/DriverRegistry.h>
+#include <peakemi/ui/InstrumentDock.h>
 
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QHeaderView>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -26,12 +27,16 @@ constexpr int DescriptorRole = Qt::UserRole + 1;
 [[nodiscard]] QString categoryFor(TransportKind kind)
 {
     switch (kind) {
-        case TransportKind::Simulated: return QObject::tr("Simulated");
-        case TransportKind::Serial:    return QObject::tr("Serial ports");
-        case TransportKind::UsbTmc:    return QObject::tr("USB");
+        case TransportKind::Simulated:
+            return QObject::tr("Simulated");
+        case TransportKind::Serial:
+            return QObject::tr("Serial ports");
+        case TransportKind::UsbTmc:
+            return QObject::tr("USB");
         case TransportKind::Tcp:
         case TransportKind::Vxi11:
-        case TransportKind::Visa:      break;
+        case TransportKind::Visa:
+            break;
     }
     return QObject::tr("Network");
 }
@@ -50,6 +55,8 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
     m_tree->setHeaderLabels({tr("Instrument"), tr("Address")});
     m_tree->setRootIsDecorated(true);
     m_tree->setUniformRowHeights(true);
+    m_tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    m_tree->header()->setStretchLastSection(true);
     layout->addWidget(m_tree, 1);
 
     auto* driverRow = new QHBoxLayout;
@@ -103,11 +110,15 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
     m_discovery = new hal::LanDiscoveryWorker;
     m_discovery->moveToThread(m_discoveryThread);
     connect(m_discoveryThread, &QThread::finished, m_discovery, &QObject::deleteLater);
-    connect(m_discovery, &hal::LanDiscoveryWorker::instrumentFound,
-            this, &InstrumentDock::onInstrumentFound);
-    connect(m_discovery, &hal::LanDiscoveryWorker::scanFinished,
-            this, &InstrumentDock::onScanFinished);
-    connect(m_discovery, &hal::LanDiscoveryWorker::scanProgress, this,
+    connect(m_discovery,
+            &hal::LanDiscoveryWorker::instrumentFound,
+            this,
+            &InstrumentDock::onInstrumentFound);
+    connect(
+        m_discovery, &hal::LanDiscoveryWorker::scanFinished, this, &InstrumentDock::onScanFinished);
+    connect(m_discovery,
+            &hal::LanDiscoveryWorker::scanProgress,
+            this,
             [this](int completed, int total) {
                 m_scanProgress->setRange(0, total);
                 m_scanProgress->setValue(completed);
@@ -118,21 +129,21 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
 
     // The simulated instrument is always available: a new user can complete a
     // run without owning any hardware (FR-HAL-7, NFR-UX-1).
-    addInstrument(hal::DiscoveredInstrument{
-                      .descriptor = TransportDescriptor{.kind = TransportKind::Simulated,
-                                                        .address = "simulated",
-                                                        .port = 0,
-                                                        .baudRate = 0,
-                                                        .terminator = "\n",
-                                                        .defaultTimeout =
-                                                            std::chrono::milliseconds{1000}},
-                      .identity = InstrumentId{.manufacturer = "PeakEmi",
-                                               .model = "Simulated Analyzer",
-                                               .serial = "SIM-0001",
-                                               .firmware = "1.0",
-                                               .raw = "PeakEmi,Simulated Analyzer,SIM-0001,1.0"},
-                      .description = tr("Deterministic synthetic spectrum, no hardware needed")},
-                  categoryFor(TransportKind::Simulated));
+    addInstrument(
+        hal::DiscoveredInstrument{
+            .descriptor = TransportDescriptor{.kind = TransportKind::Simulated,
+                                              .address = "simulated",
+                                              .port = 0,
+                                              .baudRate = 0,
+                                              .terminator = "\n",
+                                              .defaultTimeout = std::chrono::milliseconds{1000}},
+            .identity = InstrumentId{.manufacturer = "PeakEmi",
+                                     .model = "Simulated Analyzer",
+                                     .serial = "SIM-0001",
+                                     .firmware = "1.0",
+                                     .raw = "PeakEmi,Simulated Analyzer,SIM-0001,1.0"},
+            .description = tr("Deterministic synthetic spectrum, no hardware needed")},
+        categoryFor(TransportKind::Simulated));
     refreshSerialPorts();
     m_tree->expandAll();
 }
@@ -207,9 +218,8 @@ void InstrumentDock::startLanScan()
 
     const auto prefixes = hal::LanDiscoveryWorker::localSubnetPrefixes();
     if (prefixes.isEmpty()) {
-        QMessageBox::information(this,
-                                 tr("No network"),
-                                 tr("No IPv4 network interface was found to scan."));
+        QMessageBox::information(
+            this, tr("No network"), tr("No IPv4 network interface was found to scan."));
         return;
     }
 
@@ -233,15 +243,17 @@ void InstrumentDock::startLanScan()
     m_scanProgress->setRange(0, 0);
     m_scanButton->setText(tr("Abort scan"));
     emit statusMessage(tr("Scanning %1.0/24…").arg(prefix));
-    QMetaObject::invokeMethod(m_discovery, "scan", Qt::QueuedConnection,
+    QMetaObject::invokeMethod(m_discovery,
+                              "scan",
+                              Qt::QueuedConnection,
                               Q_ARG(peakemi::hal::LanDiscoveryWorker::Settings, settings));
 }
 
 void InstrumentDock::onInstrumentFound(hal::DiscoveredInstrument instrument)
 {
     addInstrument(instrument, categoryFor(instrument.descriptor.kind));
-    emit statusMessage(tr("Found %1")
-                           .arg(QString::fromStdString(instrument.identity.displayName())));
+    emit statusMessage(
+        tr("Found %1").arg(QString::fromStdString(instrument.identity.displayName())));
 }
 
 void InstrumentDock::onScanFinished(int found, bool aborted)

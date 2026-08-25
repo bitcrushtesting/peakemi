@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/Trace.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Trace.h>
+#include <peakemi/core/Units.h>
 
 #include <cstdint>
 #include <span>

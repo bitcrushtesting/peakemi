@@ -1,4 +1,4 @@
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Units.h>
 
 #include <array>
 #include <cmath>
@@ -8,8 +8,8 @@ namespace peakemi {
 namespace {
 
 template<class Enum, std::size_t N>
-[[nodiscard]] std::optional<Enum> fromKey(const std::array<std::pair<Enum, std::string_view>, N>& table,
-                                          std::string_view key)
+[[nodiscard]] std::optional<Enum>
+fromKey(const std::array<std::pair<Enum, std::string_view>, N>& table, std::string_view key)
 {
     for (const auto& [value, name] : table) {
         if (name == key) {
@@ -79,10 +79,8 @@ std::optional<Verdict> verdictFromKey(std::string_view key)
     return fromKey(VerdictKeys, key);
 }
 
-std::optional<double> convertAmplitude(double value,
-                                       AmplitudeUnit from,
-                                       AmplitudeUnit to,
-                                       double impedanceOhms)
+std::optional<double>
+convertAmplitude(double value, AmplitudeUnit from, AmplitudeUnit to, double impedanceOhms)
 {
     if (from == to) {
         return value;
@@ -98,17 +96,27 @@ std::optional<double> convertAmplitude(double value,
     const double impedanceDb = 20.0 * std::log10(impedanceOhms);
     double dBuV = value;
     switch (from) {
-        case AmplitudeUnit::dBm:  dBuV = value + dBmToDBuVOffset(impedanceOhms); break;
-        case AmplitudeUnit::dBuA: dBuV = value + impedanceDb; break;
-        case AmplitudeUnit::dBuV: break;
-        case AmplitudeUnit::dBuV_per_m: return std::nullopt;
+        case AmplitudeUnit::dBm:
+            dBuV = value + dBmToDBuVOffset(impedanceOhms);
+            break;
+        case AmplitudeUnit::dBuA:
+            dBuV = value + impedanceDb;
+            break;
+        case AmplitudeUnit::dBuV:
+            break;
+        case AmplitudeUnit::dBuV_per_m:
+            return std::nullopt;
     }
 
     switch (to) {
-        case AmplitudeUnit::dBm:  return dBuV - dBmToDBuVOffset(impedanceOhms);
-        case AmplitudeUnit::dBuA: return dBuV - impedanceDb;
-        case AmplitudeUnit::dBuV: return dBuV;
-        case AmplitudeUnit::dBuV_per_m: return std::nullopt;
+        case AmplitudeUnit::dBm:
+            return dBuV - dBmToDBuVOffset(impedanceOhms);
+        case AmplitudeUnit::dBuA:
+            return dBuV - impedanceDb;
+        case AmplitudeUnit::dBuV:
+            return dBuV;
+        case AmplitudeUnit::dBuV_per_m:
+            return std::nullopt;
     }
     return std::nullopt;
 }

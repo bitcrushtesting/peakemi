@@ -1,4 +1,4 @@
-#include <peakemi/core/InstrumentId.hpp>
+#include <peakemi/core/InstrumentId.h>
 
 namespace peakemi {
 

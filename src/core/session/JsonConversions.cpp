@@ -1,6 +1,6 @@
-#include "session/JsonConversions.hpp"
+#include "session/JsonConversions.h"
 
-#include <peakemi/core/Time.hpp>
+#include <peakemi/core/Time.h>
 
 #include <cmath>
 #include <limits>
@@ -26,7 +26,8 @@ template<class T>
     return hertz(get<std::int64_t>(json, key, fallback.value()));
 }
 
-[[nodiscard]] Decibel decibelFrom(const Json& json, const char* key, Decibel fallback = Decibel{0.0})
+[[nodiscard]] Decibel
+decibelFrom(const Json& json, const char* key, Decibel fallback = Decibel{0.0})
 {
     return decibel(get<double>(json, key, fallback.value()));
 }
@@ -133,13 +134,11 @@ Result<LimitLine> limitLineFromJson(const Json& json)
         return fail(ErrorCode::ParseFailure, "limit line '" + line.name + "' has no points array");
     }
     for (const auto& point : json.at("points")) {
-        line.points.push_back(
-            LimitPoint{.frequency = hertzFrom(point, "frequency_hz"),
-                       .amplitude = get<double>(point, "amplitude", 0.0),
-                       .interpolationToNext = enumFrom(point,
-                                                       "interpolation",
-                                                       &interpolationFromKey,
-                                                       Interpolation::LogFrequency)});
+        line.points.push_back(LimitPoint{
+            .frequency = hertzFrom(point, "frequency_hz"),
+            .amplitude = get<double>(point, "amplitude", 0.0),
+            .interpolationToNext = enumFrom(
+                point, "interpolation", &interpolationFromKey, Interpolation::LogFrequency)});
     }
     line.sortPoints();
     if (auto status = line.validate(); !status) {
@@ -189,11 +188,11 @@ Json toJson(const AppliedCorrection& value)
 
 AppliedCorrection appliedCorrectionFromJson(const Json& json)
 {
-    return AppliedCorrection{.name = get<std::string>(json, "name", {}),
-                             .kind = enumFrom(json, "kind", &correctionKindFromKey,
-                                              CorrectionKind::Other),
-                             .valueDb = get<double>(json, "value_db", 0.0),
-                             .contributionDb = get<double>(json, "contribution_db", 0.0)};
+    return AppliedCorrection{
+        .name = get<std::string>(json, "name", {}),
+        .kind = enumFrom(json, "kind", &correctionKindFromKey, CorrectionKind::Other),
+        .valueDb = get<double>(json, "value_db", 0.0),
+        .contributionDb = get<double>(json, "contribution_db", 0.0)};
 }
 
 Json toJson(const SweepParams& value)
@@ -426,8 +425,8 @@ Result<RunConfiguration> runConfigurationFromJson(const Json& json)
     }
     config.verificationDetector =
         enumFrom(json, "verification_detector", &detectorFromKey, config.verificationDetector);
-    config.dwellTime = std::chrono::milliseconds{
-        get<std::int64_t>(json, "dwell_ms", config.dwellTime.count())};
+    config.dwellTime =
+        std::chrono::milliseconds{get<std::int64_t>(json, "dwell_ms", config.dwellTime.count())};
     config.verificationSpan = hertzFrom(json, "verification_span_hz", config.verificationSpan);
     config.verificationPoints = get<int>(json, "verification_points", config.verificationPoints);
     config.verificationRbw = hertzFrom(json, "verification_rbw_hz", config.verificationRbw);

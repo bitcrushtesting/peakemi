@@ -1,8 +1,8 @@
-#include <peakemi/core/Capabilities.hpp>
-#include <peakemi/core/LimitCatalogue.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
-#include <peakemi/core/SessionSerializer.hpp>
-#include <peakemi/core/Time.hpp>
+#include <peakemi/core/Capabilities.h>
+#include <peakemi/core/LimitCatalogue.h>
+#include <peakemi/core/RunConfiguration.h>
+#include <peakemi/core/SessionSerializer.h>
+#include <peakemi/core/Time.h>
 
 #include <QDir>
 #include <QFile>
@@ -39,7 +39,10 @@ namespace {
     trace.detector = Detector::Peak;
     trace.label = "Phase 1";
     trace.corrected = true;
-    trace.source = InstrumentId{"PeakEmi", "Simulated Analyzer", "SIM-0001", "1.0",
+    trace.source = InstrumentId{"PeakEmi",
+                                "Simulated Analyzer",
+                                "SIM-0001",
+                                "1.0",
                                 "PeakEmi,Simulated Analyzer,SIM-0001,1.0"};
     trace.acquiredAt = std::chrono::system_clock::now();
     session.traces.push_back(trace);
@@ -161,10 +164,9 @@ void SessionTest::savesAtomicallyAndReloads()
     QVERIFY(reloaded.has_value());
     QCOMPARE(reloaded->results.size(), session.results.size());
 
-    QCOMPARE(SessionSerializer::load(directory.filePath(QStringLiteral("missing.json")))
-                 .error()
-                 .code,
-             ErrorCode::IoFailure);
+    QCOMPARE(
+        SessionSerializer::load(directory.filePath(QStringLiteral("missing.json"))).error().code,
+        ErrorCode::IoFailure);
 }
 
 void SessionTest::overallVerdictIsTheWorstOne()
@@ -321,8 +323,8 @@ void SessionTest::capabilityCoercionSnapsToSupportedValues()
 
 void SessionTest::isoTimestampsRoundTrip()
 {
-    const auto now = std::chrono::time_point_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now());
+    const auto now =
+        std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
     const auto text = toIso8601(now);
     QVERIFY(text.ends_with("Z") || text.find('+') != std::string::npos);
 

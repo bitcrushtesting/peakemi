@@ -1,9 +1,9 @@
 #pragma once
 
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/InstrumentId.hpp>
-#include <peakemi/core/Time.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/InstrumentId.h>
+#include <peakemi/core/Time.h>
+#include <peakemi/core/Units.h>
 
 #include <chrono>
 #include <string>

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 project(PeakEmi
     VERSION      0.1.0
     DESCRIPTION  "Cross-platform EMI pre-compliance measurement suite"
-    HOMEPAGE_URL "https://github.com/bitcrush/peakemi"
+    HOMEPAGE_URL "https://github.com/bitcrushtesting/peakemi"
     LANGUAGES    CXX)
 
 # ---------------------------------------------------------------------------
@@ -52,6 +52,10 @@ if(PEAKEMI_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
+if(PEAKEMI_BUILD_TOOLS)
+    add_subdirectory(tools)
+endif()
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
@@ -60,6 +64,7 @@ message(STATUS "PeakEmi ${PROJECT_VERSION}")
 message(STATUS "  build type ......... ${CMAKE_BUILD_TYPE}")
 message(STATUS "  compiler ........... ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "  tests .............. ${PEAKEMI_BUILD_TESTS}")
+message(STATUS "  tools .............. ${PEAKEMI_BUILD_TOOLS}")
 message(STATUS "  python plugins ..... ${PEAKEMI_WITH_PYTHON}")
 message(STATUS "  usbtmc ............. ${PEAKEMI_WITH_USBTMC}")
 message(STATUS "  visa ............... ${PEAKEMI_WITH_VISA}")

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/LimitLine.hpp>
-#include <peakemi/core/MeasurementPoint.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
-#include <peakemi/core/Session.hpp>
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/LimitLine.h>
+#include <peakemi/core/MeasurementPoint.h>
+#include <peakemi/core/RunConfiguration.h>
+#include <peakemi/core/Session.h>
+#include <peakemi/core/Trace.h>
 
 #include <nlohmann/json.hpp>
 

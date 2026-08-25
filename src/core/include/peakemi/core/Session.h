@@ -1,8 +1,8 @@
 #pragma once
 
-#include <peakemi/core/MeasurementPoint.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/MeasurementPoint.h>
+#include <peakemi/core/RunConfiguration.h>
+#include <peakemi/core/Trace.h>
 
 #include <optional>
 #include <string>

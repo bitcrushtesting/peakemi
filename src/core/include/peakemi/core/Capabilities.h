@@ -1,8 +1,8 @@
 #pragma once
 
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/SweepParams.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/SweepParams.h>
+#include <peakemi/core/Units.h>
 
 #include <vector>
 

@@ -1,5 +1,5 @@
-#include <peakemi/hal/DriverRegistry.hpp>
-#include <peakemi/hal/Scpi.hpp>
+#include <peakemi/hal/DriverRegistry.h>
+#include <peakemi/hal/Scpi.h>
 
 #include <QTest>
 
@@ -34,8 +34,7 @@ void ScpiTest::parsesIdnResponses()
     QCOMPARE(id.serial, std::string{"SSA3XABC1234"});
     QCOMPARE(id.firmware, std::string{"1.2.9.5"});
     QVERIFY(!id.isEmpty());
-    QCOMPARE(id.displayName(),
-             std::string{"Siglent Technologies SSA3032X (SSA3XABC1234)"});
+    QCOMPARE(id.displayName(), std::string{"Siglent Technologies SSA3032X (SSA3XABC1234)"});
 }
 
 void ScpiTest::parsesPartialIdn()
@@ -69,12 +68,10 @@ void ScpiTest::rejectsMalformedBlocks()
 {
     QCOMPARE(scpi::parseDefiniteLengthBlock("no block here").error().code,
              ErrorCode::ProtocolViolation);
-    QCOMPARE(scpi::parseDefiniteLengthBlock("#0stream").error().code,
-             ErrorCode::ProtocolViolation);
+    QCOMPARE(scpi::parseDefiniteLengthBlock("#0stream").error().code, ErrorCode::ProtocolViolation);
     QCOMPARE(scpi::parseDefiniteLengthBlock("#3012short").error().code,
              ErrorCode::ProtocolViolation);
-    QCOMPARE(scpi::parseDefiniteLengthBlock("#X12abc").error().code,
-             ErrorCode::ProtocolViolation);
+    QCOMPARE(scpi::parseDefiniteLengthBlock("#X12abc").error().code, ErrorCode::ProtocolViolation);
 }
 
 void ScpiTest::parsesAsciiTraces()

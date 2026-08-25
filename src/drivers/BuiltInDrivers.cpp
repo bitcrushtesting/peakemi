@@ -1,6 +1,6 @@
-#include <peakemi/drivers/ScpiAnalyzerDriver.hpp>
-#include <peakemi/drivers/SimulatedDriver.hpp>
-#include <peakemi/hal/DriverRegistry.hpp>
+#include <peakemi/drivers/ScpiAnalyzerDriver.h>
+#include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/hal/DriverRegistry.h>
 
 namespace peakemi::drivers {
 
@@ -8,20 +8,20 @@ void registerBuiltInDrivers()
 {
     auto& registry = hal::DriverRegistry::instance();
 
-    registry.registerDriver(hal::DriverRegistry::Entry{
-        .info = SimulatedDriver::staticInfo(),
-        .matcher = hal::makeMatcher("PeakEmi", {"Simulated Analyzer"}),
-        .factory = [] { return std::make_shared<SimulatedDriver>(); }});
+    registry.registerDriver(
+        hal::DriverRegistry::Entry{.info = SimulatedDriver::staticInfo(),
+                                   .matcher = hal::makeMatcher("PeakEmi", {"Simulated Analyzer"}),
+                                   .factory = [] { return std::make_shared<SimulatedDriver>(); }});
 
-    registry.registerDriver(hal::DriverRegistry::Entry{
-        .info = makeSiglentSsaDriver()->info(),
-        .matcher = hal::makeMatcher("Siglent", {"SSA3*", "SVA1*"}),
-        .factory = &makeSiglentSsaDriver});
+    registry.registerDriver(
+        hal::DriverRegistry::Entry{.info = makeSiglentSsaDriver()->info(),
+                                   .matcher = hal::makeMatcher("Siglent", {"SSA3*", "SVA1*"}),
+                                   .factory = &makeSiglentSsaDriver});
 
-    registry.registerDriver(hal::DriverRegistry::Entry{
-        .info = makeRigolDsaDriver()->info(),
-        .matcher = hal::makeMatcher("Rigol", {"DSA7*", "DSA8*"}),
-        .factory = &makeRigolDsaDriver});
+    registry.registerDriver(
+        hal::DriverRegistry::Entry{.info = makeRigolDsaDriver()->info(),
+                                   .matcher = hal::makeMatcher("Rigol", {"DSA7*", "DSA8*"}),
+                                   .factory = &makeRigolDsaDriver});
 }
 
 } // namespace peakemi::drivers

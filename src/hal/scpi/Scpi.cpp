@@ -1,4 +1,4 @@
-#include <peakemi/hal/Scpi.hpp>
+#include <peakemi/hal/Scpi.h>
 
 #include <algorithm>
 #include <charconv>
@@ -89,9 +89,8 @@ Result<BlockHeader> parseBlockHeader(std::string_view data)
 
     std::size_t payloadSize = 0;
     const auto lengthField = data.substr(2, digits);
-    const auto [end, error] = std::from_chars(lengthField.data(),
-                                              lengthField.data() + lengthField.size(),
-                                              payloadSize);
+    const auto [end, error] =
+        std::from_chars(lengthField.data(), lengthField.data() + lengthField.size(), payloadSize);
     if (error != std::errc{} || end != lengthField.data() + lengthField.size()) {
         return fail(ErrorCode::ProtocolViolation,
                     "block length field '" + std::string{lengthField} + "' is not numeric");
@@ -107,9 +106,8 @@ Result<std::vector<std::byte>> parseDefiniteLengthBlock(std::string_view respons
     }
     if (response.size() < header->headerSize + header->payloadSize) {
         return fail(ErrorCode::ProtocolViolation,
-                    "block payload is truncated: expected " + std::to_string(header->payloadSize)
-                        + " bytes, got "
-                        + std::to_string(response.size() - header->headerSize));
+                    "block payload is truncated: expected " + std::to_string(header->payloadSize) +
+                        " bytes, got " + std::to_string(response.size() - header->headerSize));
     }
 
     std::vector<std::byte> payload(header->payloadSize);

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/CancelToken.hpp>
-#include <peakemi/core/Error.hpp>
+#include <peakemi/core/CancelToken.h>
+#include <peakemi/core/Error.h>
 
 #include <chrono>
 #include <cstddef>
@@ -68,14 +68,12 @@ public:
                                                    const CancelToken& cancel) = 0;
 
     /// Read an IEEE 488.2 definite-length block, e.g. a binary trace.
-    [[nodiscard]] virtual Result<std::vector<std::byte>> readBinaryBlock(
-        std::chrono::milliseconds timeout,
-        const CancelToken& cancel) = 0;
+    [[nodiscard]] virtual Result<std::vector<std::byte>>
+    readBinaryBlock(std::chrono::milliseconds timeout, const CancelToken& cancel) = 0;
 
     /// Write and read in one step; the common SCPI query.
-    [[nodiscard]] virtual Result<std::string> query(std::string_view command,
-                                                    std::chrono::milliseconds timeout,
-                                                    const CancelToken& cancel);
+    [[nodiscard]] virtual Result<std::string>
+    query(std::string_view command, std::chrono::milliseconds timeout, const CancelToken& cancel);
 
     /// Discard buffered data and any pending operation.
     virtual void clear() = 0;

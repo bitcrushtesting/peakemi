@@ -1,4 +1,4 @@
-#include <peakemi/core/Capabilities.hpp>
+#include <peakemi/core/Capabilities.h>
 
 #include <algorithm>
 #include <cmath>
@@ -51,33 +51,31 @@ Status Capabilities::validate(const SweepParams& params) const
     }
     if (params.span.start < range.start || params.span.stop > range.stop) {
         return fail(ErrorCode::UnsupportedSetting,
-                    "span " + describe(params.span.start) + " to " + describe(params.span.stop)
-                        + " leaves the instrument range " + describe(range.start) + " to "
-                        + describe(range.stop));
+                    "span " + describe(params.span.start) + " to " + describe(params.span.stop) +
+                        " leaves the instrument range " + describe(range.start) + " to " +
+                        describe(range.stop));
     }
     if (params.points < minimumPoints || params.points > maximumPoints) {
         return fail(ErrorCode::UnsupportedSetting,
-                    "trace point count " + std::to_string(params.points) + " outside "
-                        + std::to_string(minimumPoints) + " to " + std::to_string(maximumPoints));
+                    "trace point count " + std::to_string(params.points) + " outside " +
+                        std::to_string(minimumPoints) + " to " + std::to_string(maximumPoints));
     }
     if (!supports(params.detector)) {
         return fail(ErrorCode::UnsupportedSetting,
                     "detector " + std::string{detectorKey(params.detector)} + " not available");
     }
     if (params.rbw > Hertz{0} && !resolutionBandwidths.empty()) {
-        const bool exact = std::find(resolutionBandwidths.begin(),
-                                     resolutionBandwidths.end(),
-                                     params.rbw)
-                           != resolutionBandwidths.end();
+        const bool exact =
+            std::find(resolutionBandwidths.begin(), resolutionBandwidths.end(), params.rbw) !=
+            resolutionBandwidths.end();
         if (!exact) {
             return fail(ErrorCode::UnsupportedSetting,
                         "resolution bandwidth " + describe(params.rbw) + " not available");
         }
     }
     if (params.vbw > Hertz{0} && !videoBandwidths.empty()) {
-        const bool exact =
-            std::find(videoBandwidths.begin(), videoBandwidths.end(), params.vbw)
-            != videoBandwidths.end();
+        const bool exact = std::find(videoBandwidths.begin(), videoBandwidths.end(), params.vbw) !=
+                           videoBandwidths.end();
         if (!exact) {
             return fail(ErrorCode::UnsupportedSetting,
                         "video bandwidth " + describe(params.vbw) + " not available");
@@ -86,16 +84,17 @@ Status Capabilities::validate(const SweepParams& params) const
     if (params.preamp && !preamp) {
         return fail(ErrorCode::UnsupportedSetting, "instrument has no pre-amplifier");
     }
-    if (!params.automaticAttenuation
-        && (params.attenuation < minimumAttenuation || params.attenuation > maximumAttenuation)) {
+    if (!params.automaticAttenuation &&
+        (params.attenuation < minimumAttenuation || params.attenuation > maximumAttenuation))
+    {
         return fail(ErrorCode::UnsupportedSetting,
-                    "attenuation " + std::to_string(params.attenuation.value())
-                        + " dB outside the supported range");
+                    "attenuation " + std::to_string(params.attenuation.value()) +
+                        " dB outside the supported range");
     }
     if (params.refLevel < minimumRefLevel || params.refLevel > maximumRefLevel) {
         return fail(ErrorCode::UnsupportedSetting,
-                    "reference level " + std::to_string(params.refLevel.value())
-                        + " dB outside the supported range");
+                    "reference level " + std::to_string(params.refLevel.value()) +
+                        " dB outside the supported range");
     }
     return {};
 }

@@ -1,4 +1,4 @@
-#include <peakemi/core/Session.hpp>
+#include <peakemi/core/Session.h>
 
 #include <QUuid>
 
@@ -48,8 +48,7 @@ Session Session::createNew(std::string applicationVersion)
 {
     Session session;
     session.meta.applicationVersion = std::move(applicationVersion);
-    session.meta.runId =
-        QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
+    session.meta.runId = QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
     session.meta.createdAt = std::chrono::system_clock::now();
     session.meta.modifiedAt = session.meta.createdAt;
     return session;

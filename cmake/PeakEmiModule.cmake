@@ -7,7 +7,7 @@
 #
 # Creates the static library peakemi_<name> plus the alias peakemi::<name>, wires
 # the shared option/warning interface targets and exposes include/ publicly so
-# consumers write #include <peakemi/<name>/Foo.hpp>.
+# consumers write #include <peakemi/<name>/Foo.h>.
 include_guard(GLOBAL)
 
 function(peakemi_add_module NAME)

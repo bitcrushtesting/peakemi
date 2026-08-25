@@ -1,9 +1,9 @@
 #pragma once
 
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/LimitLine.hpp>
-#include <peakemi/core/PeakDetector.hpp>
-#include <peakemi/core/SweepParams.hpp>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/LimitLine.h>
+#include <peakemi/core/PeakDetector.h>
+#include <peakemi/core/SweepParams.h>
 
 #include <chrono>
 #include <string>
@@ -42,8 +42,8 @@ struct RunConfiguration
     Hertz verificationRbw{0};
 
     // --- Run policy ---------------------------------------------------------
-    int passes{1};      ///< max-hold passes over the whole loop (FR-RUN-8)
-    int maxRetries{2};  ///< bounded retry on instrument errors (FR-RUN-7)
+    int passes{1};     ///< max-hold passes over the whole loop (FR-RUN-8)
+    int maxRetries{2}; ///< bounded retry on instrument errors (FR-RUN-7)
     std::chrono::milliseconds operationTimeout{15000};
     double marginalThresholdDb{6.0};
     bool autosave{true};

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <peakemi/core/AbstractAnalyzerDriver.hpp>
-#include <peakemi/core/CancelToken.hpp>
-#include <peakemi/core/LimitEvaluator.hpp>
-#include <peakemi/core/MeasurementPoint.hpp>
-#include <peakemi/core/PeakDetector.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
-#include <peakemi/core/Session.hpp>
+#include <peakemi/core/AbstractAnalyzerDriver.h>
+#include <peakemi/core/CancelToken.h>
+#include <peakemi/core/LimitEvaluator.h>
+#include <peakemi/core/MeasurementPoint.h>
+#include <peakemi/core/PeakDetector.h>
+#include <peakemi/core/RunConfiguration.h>
+#include <peakemi/core/Session.h>
 
 #include <QObject>
 #include <QString>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/AbstractAnalyzerDriver.hpp>
+#include <peakemi/core/AbstractAnalyzerDriver.h>
 
 #include <atomic>
 #include <cstdint>
@@ -25,8 +25,8 @@ struct SimulatedEmitter
 /// is drawn from a generator seeded with the sweep parameters.
 struct SimulatedInstrumentConfig
 {
-    double noiseFloor{18.0};   ///< mean noise level in `unit`
-    double noiseSigmaDb{1.2};  ///< spread of the noise
+    double noiseFloor{18.0};  ///< mean noise level in `unit`
+    double noiseSigmaDb{1.2}; ///< spread of the noise
     AmplitudeUnit unit{AmplitudeUnit::dBuV};
     std::uint32_t seed{0x50454b45U};
     std::vector<SimulatedEmitter> emitters;
@@ -46,19 +46,24 @@ struct SimulatedInstrumentConfig
 class SimulatedDriver final : public AbstractAnalyzerDriver
 {
 public:
-    explicit SimulatedDriver(SimulatedInstrumentConfig config = SimulatedInstrumentConfig::demoBench());
+    explicit SimulatedDriver(
+        SimulatedInstrumentConfig config = SimulatedInstrumentConfig::demoBench());
     ~SimulatedDriver() override;
 
     [[nodiscard]] static DriverInfo staticInfo();
 
     void setConfig(SimulatedInstrumentConfig config);
+
     [[nodiscard]] const SimulatedInstrumentConfig& config() const { return m_config; }
 
     [[nodiscard]] DriverInfo info() const override { return staticInfo(); }
+
     [[nodiscard]] Capabilities capabilities() const override;
 
     [[nodiscard]] Status open(TransportPtr transport) override;
+
     [[nodiscard]] bool isOpen() const override { return m_open; }
+
     void close() override;
 
     [[nodiscard]] Result<InstrumentId> identify() override;

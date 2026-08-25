@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/ui/IPlotBackend.hpp>
+#include <peakemi/ui/IPlotBackend.h>
 
 #include <QPoint>
 #include <QWidget>
@@ -18,7 +18,9 @@ namespace peakemi::ui {
 /// which is what keeps a 40,001-point trace interactive: the cost of a repaint
 /// depends on the widget width, not on the trace length (NFR-PERF-2). The full
 /// arrays stay untouched in the session.
-class PainterPlotBackend : public QWidget, public IPlotBackend
+class PainterPlotBackend
+    : public QWidget
+    , public IPlotBackend
 {
     Q_OBJECT
 

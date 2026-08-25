@@ -1,4 +1,4 @@
-#include <peakemi/core/CisprBands.hpp>
+#include <peakemi/core/CisprBands.h>
 
 #include <array>
 

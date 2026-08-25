@@ -1,8 +1,8 @@
-#include "session/JsonConversions.hpp"
+#include "session/JsonConversions.h"
 
-#include <peakemi/core/AtomicFileWriter.hpp>
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/core/SessionSerializer.hpp>
+#include <peakemi/core/AtomicFileWriter.h>
+#include <peakemi/core/Logging.h>
+#include <peakemi/core/SessionSerializer.h>
 
 namespace peakemi {
 namespace {
@@ -50,8 +50,8 @@ Result<Session> SessionSerializer::fromJson(std::string_view text)
     }
     if (version > CurrentSchemaVersion) {
         return fail(ErrorCode::SchemaVersionUnsupported,
-                    "session schema version " + std::to_string(version)
-                        + " was written by a newer PeakEmi");
+                    "session schema version " + std::to_string(version) +
+                        " was written by a newer PeakEmi");
     }
 
     Session session;
@@ -90,8 +90,8 @@ Status SessionSerializer::save(const Session& session, const QString& path)
 {
     const auto status = writeFileAtomically(path, toJson(session));
     if (status) {
-        qCInfo(lcSession) << "session saved to" << path << "-" << session.traces.size()
-                          << "traces," << session.results.size() << "results";
+        qCInfo(lcSession) << "session saved to" << path << "-" << session.traces.size() << "traces,"
+                          << session.results.size() << "results";
     }
     return status;
 }

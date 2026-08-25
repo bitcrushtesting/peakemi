@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/ITransport.hpp>
+#include <peakemi/core/ITransport.h>
 
 #include <algorithm>
 #include <map>
@@ -19,8 +19,7 @@ class ScriptedTransport final : public ITransport
 public:
     explicit ScriptedTransport(std::map<std::string, std::string> responses = {})
         : m_responses{std::move(responses)}
-    {
-    }
+    {}
 
     void setResponse(std::string command, std::string response)
     {
@@ -80,9 +79,8 @@ public:
         return found->second;
     }
 
-    [[nodiscard]] Result<std::vector<std::byte>> readBinaryBlock(
-        std::chrono::milliseconds /*timeout*/,
-        const CancelToken& /*cancel*/) override
+    [[nodiscard]] Result<std::vector<std::byte>>
+    readBinaryBlock(std::chrono::milliseconds /*timeout*/, const CancelToken& /*cancel*/) override
     {
         return fail(ErrorCode::NotImplemented, "scripted transport has no binary payloads");
     }

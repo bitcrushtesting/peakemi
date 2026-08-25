@@ -1,5 +1,5 @@
-#include <peakemi/ui/ResultsDock.hpp>
-#include <peakemi/ui/ResultsTableModel.hpp>
+#include <peakemi/ui/ResultsDock.h>
+#include <peakemi/ui/ResultsTableModel.h>
 
 #include <QHeaderView>
 #include <QLabel>
@@ -48,8 +48,7 @@ ResultsDock::ResultsDock(QWidget* parent) : QDockWidget{tr("Results"), parent}
                 if (!current.isValid()) {
                     return;
                 }
-                const auto frequency =
-                    current.data(ResultsTableModel::FrequencyRole).toLongLong();
+                const auto frequency = current.data(ResultsTableModel::FrequencyRole).toLongLong();
                 emit pointSelected(hertz(frequency));
             });
 }
@@ -103,7 +102,8 @@ void ResultsDock::updateSummary()
     for (const auto& point : points) {
         failures += point.verdict == Verdict::Fail ? 1 : 0;
         marginal += point.verdict == Verdict::Marginal ? 1 : 0;
-        if (std::isfinite(point.marginDb) && (worst == nullptr || point.marginDb < worst->marginDb)) {
+        if (std::isfinite(point.marginDb) && (worst == nullptr || point.marginDb < worst->marginDb))
+        {
             worst = &point;
         }
     }

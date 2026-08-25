@@ -1,7 +1,8 @@
 #pragma once
 
-#include <peakemi/core/MeasurementEngine.hpp>
-#include <peakemi/core/Session.hpp>
+#include <peakemi/core/MeasurementEngine.h>
+#include <peakemi/core/PeakDetector.h>
+#include <peakemi/core/Session.h>
 
 #include <QMainWindow>
 #include <QString>
@@ -80,6 +81,7 @@ private:
     void updateActionStates();
     void updateWindowTitle();
     void showLimitOverlays();
+    void refreshMarkers();
     void log(const QString& message);
     [[nodiscard]] bool confirmDiscardChanges();
     [[nodiscard]] QString autosavePathFor(const QString& runId) const;
@@ -116,6 +118,8 @@ private:
     QLabel* m_phaseStatus{nullptr};
     QProgressBar* m_progress{nullptr};
 
+    std::vector<PeakCandidate> m_peaks;
+    Hertz m_selectedFrequency{0};
     Session m_session;
     QString m_sessionPath;
     bool m_dirty{false};
