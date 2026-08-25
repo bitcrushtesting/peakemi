@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=PeakEmi
+GenericName=EMI pre-compliance measurement suite
+Comment=Automated EMI pre-compliance scanning against CISPR and FCC limit lines
+Exec=peakemi %f
+Icon=peakemi
+Terminal=false
+Categories=Development;Engineering;Electronics;
+Keywords=EMC;EMI;CISPR;FCC;spectrum;analyzer;pre-compliance;
+MimeType=application/json;

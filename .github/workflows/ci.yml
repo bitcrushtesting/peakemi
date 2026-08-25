@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  QT_VERSION: "6.8.1"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux (GCC 13)
+            os: ubuntu-24.04
+            preset: ci
+            cc: gcc-13
+            cxx: g++-13
+          - name: macOS (AppleClang)
+            os: macos-14
+            preset: ci
+          - name: Windows (MSVC 2022)
+            os: windows-2022
+            preset: ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build gcc-13 g++-13 \
+            libgl1-mesa-dev libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-shape0 libxcb-xinerama0 libudev-dev
+
+      - name: Install Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: Set up MSVC environment
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: qtserialport
+          cache: true
+
+      - name: Configure, build and test
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+          # Widgets tests run without a display server (NFR-QUA-3).
+          QT_QPA_PLATFORM: offscreen
+        run: cmake --workflow --preset ${{ matrix.preset }}
+
+      - name: Upload test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ runner.os }}
+          path: build/ci/Testing/**
+          if-no-files-found: ignore
+
+  static-analysis:
+    name: Format and static analysis
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build clang-format-18 clang-tidy-18 \
+            libgl1-mesa-dev libudev-dev
+          sudo update-alternatives --install /usr/bin/clang-format clang-format \
+            /usr/bin/clang-format-18 100
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy \
+            /usr/bin/clang-tidy-18 100
+
+      - name: Check formatting
+        run: |
+          # *.h.in holds CMake @VARIABLE@ placeholders, which clang-format
+          # cannot parse; it is generated into a formatted header at build time.
+          mapfile -t files < <(git ls-files '*.cpp' '*.h')
+          clang-format --dry-run --Werror "${files[@]}"
+
+      - name: Install Qt ${{ env.QT_VERSION }}
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          modules: qtserialport
+          cache: true
+
+      - name: Configure with clang-tidy
+        run: |
+          cmake --preset ci -DPEAKEMI_ENABLE_CLANG_TIDY=ON \
+            -DPEAKEMI_WARNINGS_AS_ERRORS=OFF -DPEAKEMI_BUILD_TOOLS=ON
+
+      - name: Build with clang-tidy
+        run: cmake --build --preset ci
