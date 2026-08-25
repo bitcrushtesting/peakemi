@@ -30,6 +30,11 @@ set(PEAKEMI_GCC_CLANG_WARNINGS
     -Wdouble-promotion
     -Wformat=2
     -Wimplicit-fallthrough
+    # Designated initializers deliberately leave defaulted members out, and GCC
+    # flags every one of them under -Wextra (architecture.md 2.3 endorses the
+    # style). Clang does not warn, so keeping this on would make the warning set
+    # compiler-dependent rather than stricter.
+    -Wno-missing-field-initializers
 )
 
 set(PEAKEMI_GCC_EXTRA_WARNINGS
