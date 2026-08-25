@@ -53,15 +53,16 @@ private slots:
     void exportPlotImage();
     void exportPdfReport();
 
-    void onConnectRequested(peakemi::TransportDescriptor descriptor, QString driverId);
+    void onConnectRequested(const peakemi::TransportDescriptor& descriptor,
+                            const QString& driverId);
     void onConnectionChanged(bool connected);
     void onPhaseChanged(peakemi::MeasurementEngine::Phase phase);
-    void onTraceAcquired(peakemi::TracePtr trace);
+    void onTraceAcquired(const peakemi::TracePtr& trace);
     void onPeaksFlagged(std::vector<peakemi::PeakCandidate> peaks);
-    void onPointMeasured(peakemi::MeasurementPoint point);
+    void onPointMeasured(const peakemi::MeasurementPoint& point);
     void onProgress(int completed, int total, qint64 estimatedRemainingMs);
-    void onRunFailed(peakemi::Error error);
-    void onRunFinished(peakemi::Session session);
+    void onRunFailed(const peakemi::Error& error);
+    void onRunFinished(const peakemi::Session& session);
 
     void startRun();
     void togglePause();
