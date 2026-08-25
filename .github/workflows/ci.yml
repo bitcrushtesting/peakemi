@@ -82,15 +82,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # clang 18 cannot parse libstdc++'s <expected> and reports every use of
+      # std::expected as an unknown template, so the analyser needs a newer
+      # release than Ubuntu 24.04 ships.
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build clang-format-18 clang-tidy-18 \
+          sudo apt-get install -y ninja-build lsb-release wget software-properties-common gnupg \
             libgl1-mesa-dev libudev-dev
+          wget -qO llvm.sh https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          sudo apt-get install -y clang-tidy-20 clang-format-20
           sudo update-alternatives --install /usr/bin/clang-format clang-format \
-            /usr/bin/clang-format-18 100
+            /usr/bin/clang-format-20 100
           sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy \
-            /usr/bin/clang-tidy-18 100
+            /usr/bin/clang-tidy-20 100
+          clang-tidy --version
 
       - name: Check formatting
         run: |
@@ -107,6 +115,9 @@ jobs:
           cache: true
 
       - name: Configure with clang-tidy
+        env:
+          CC: clang-20
+          CXX: clang++-20
         run: |
           cmake --preset ci -DPEAKEMI_ENABLE_CLANG_TIDY=ON \
             -DPEAKEMI_WARNINGS_AS_ERRORS=OFF -DPEAKEMI_BUILD_TOOLS=ON

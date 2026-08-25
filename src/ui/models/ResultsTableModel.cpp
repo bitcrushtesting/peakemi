@@ -94,7 +94,8 @@ QVariant ResultsTableModel::data(const QModelIndex& index, int role) const
     }
 
     if (role == FrequencyRole) {
-        return QVariant::fromValue(static_cast<qint64>(point->frequency.value()));
+        const qint64 frequency = point->frequency.value();
+        return QVariant::fromValue(frequency);
     }
 
     if (role == Qt::BackgroundRole) {
@@ -118,10 +119,14 @@ QVariant ResultsTableModel::data(const QModelIndex& index, int role) const
                 return point->limitValue;
             case MarginColumn:
                 return point->marginDb;
-            case DwellColumn:
-                return static_cast<qint64>(point->dwell.count());
-            case BandwidthColumn:
-                return static_cast<qint64>(point->rbw.value());
+            case DwellColumn: {
+                const qint64 dwell = point->dwell.count();
+                return dwell;
+            }
+            case BandwidthColumn: {
+                const qint64 bandwidth = point->rbw.value();
+                return bandwidth;
+            }
             default:
                 break;
         }
