@@ -1,21 +1,21 @@
-#include <peakemi/core/Disclaimer.hpp>
-#include <peakemi/core/LimitEvaluator.hpp>
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/core/SessionSerializer.hpp>
-#include <peakemi/core/Version.hpp>
-#include <peakemi/drivers/SimulatedDriver.hpp>
-#include <peakemi/hal/DriverRegistry.hpp>
-#include <peakemi/hal/SerialScpiTransport.hpp>
-#include <peakemi/hal/TcpScpiTransport.hpp>
-#include <peakemi/reporting/CsvExporter.hpp>
-#include <peakemi/reporting/PdfReportRenderer.hpp>
-#include <peakemi/ui/InstrumentDock.hpp>
-#include <peakemi/ui/LogDock.hpp>
-#include <peakemi/ui/MainWindow.hpp>
-#include <peakemi/ui/PainterPlotBackend.hpp>
-#include <peakemi/ui/ResultsDock.hpp>
-#include <peakemi/ui/RunConfigDock.hpp>
-#include <peakemi/ui/RunController.hpp>
+#include <peakemi/core/Disclaimer.h>
+#include <peakemi/core/LimitEvaluator.h>
+#include <peakemi/core/Logging.h>
+#include <peakemi/core/SessionSerializer.h>
+#include <peakemi/core/Version.h>
+#include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/hal/DriverRegistry.h>
+#include <peakemi/hal/SerialScpiTransport.h>
+#include <peakemi/hal/TcpScpiTransport.h>
+#include <peakemi/reporting/CsvExporter.h>
+#include <peakemi/reporting/PdfReportRenderer.h>
+#include <peakemi/ui/InstrumentDock.h>
+#include <peakemi/ui/LogDock.h>
+#include <peakemi/ui/MainWindow.h>
+#include <peakemi/ui/PainterPlotBackend.h>
+#include <peakemi/ui/ResultsDock.h>
+#include <peakemi/ui/RunConfigDock.h>
+#include <peakemi/ui/RunController.h>
 
 #include <QApplication>
 #include <QCloseEvent>
@@ -50,15 +50,24 @@ namespace {
 [[nodiscard]] QString phaseName(MeasurementEngine::Phase phase)
 {
     switch (phase) {
-        case MeasurementEngine::Phase::Idle:        return QObject::tr("Idle");
-        case MeasurementEngine::Phase::Configured:  return QObject::tr("Configured");
-        case MeasurementEngine::Phase::Phase1Sweep: return QObject::tr("Phase 1 — scanning");
-        case MeasurementEngine::Phase::PeakAnalysis:return QObject::tr("Analysing peaks");
-        case MeasurementEngine::Phase::Phase2Dwell: return QObject::tr("Phase 2 — verifying");
-        case MeasurementEngine::Phase::Paused:      return QObject::tr("Paused");
-        case MeasurementEngine::Phase::Finished:    return QObject::tr("Finished");
-        case MeasurementEngine::Phase::Failed:      return QObject::tr("Failed");
-        case MeasurementEngine::Phase::Aborted:     return QObject::tr("Aborted");
+        case MeasurementEngine::Phase::Idle:
+            return QObject::tr("Idle");
+        case MeasurementEngine::Phase::Configured:
+            return QObject::tr("Configured");
+        case MeasurementEngine::Phase::Phase1Sweep:
+            return QObject::tr("Phase 1 — scanning");
+        case MeasurementEngine::Phase::PeakAnalysis:
+            return QObject::tr("Analysing peaks");
+        case MeasurementEngine::Phase::Phase2Dwell:
+            return QObject::tr("Phase 2 — verifying");
+        case MeasurementEngine::Phase::Paused:
+            return QObject::tr("Paused");
+        case MeasurementEngine::Phase::Finished:
+            return QObject::tr("Finished");
+        case MeasurementEngine::Phase::Failed:
+            return QObject::tr("Failed");
+        case MeasurementEngine::Phase::Aborted:
+            return QObject::tr("Aborted");
     }
     return {};
 }
@@ -88,8 +97,8 @@ namespace {
     constexpr int Samples = 400;
     for (int i = 0; i <= Samples; ++i) {
         const double fraction = static_cast<double>(i) / Samples;
-        const auto frequency =
-            start + Hertz{static_cast<std::int64_t>(fraction * static_cast<double>((stop - start).value()))};
+        const auto frequency = start + Hertz{static_cast<std::int64_t>(
+                                           fraction * static_cast<double>((stop - start).value()))};
         const double value = limit.evaluateAt(frequency);
         if (std::isfinite(value)) {
             points.append(QPointF{static_cast<double>(frequency.value()), value});
@@ -118,7 +127,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow{parent}
     createStatusBar();
     restoreLayout();
 
-    connect(m_controller, &RunController::connectionChanged, this, &MainWindow::onConnectionChanged);
+    connect(
+        m_controller, &RunController::connectionChanged, this, &MainWindow::onConnectionChanged);
     connect(m_controller, &RunController::phaseChanged, this, &MainWindow::onPhaseChanged);
     connect(m_controller, &RunController::traceAcquired, this, &MainWindow::onTraceAcquired);
     connect(m_controller, &RunController::peaksFlagged, this, &MainWindow::onPeaksFlagged);
@@ -130,18 +140,21 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow{parent}
     connect(m_controller, &RunController::rawResponse, this, [this](const QString& response) {
         m_logDock->appendConsole(response);
     });
-    connect(m_controller, &RunController::instrumentIdentified, this,
+    connect(m_controller,
+            &RunController::instrumentIdentified,
+            this,
             [this](const InstrumentId& identity) {
                 m_instrumentStatus->setText(QString::fromStdString(identity.displayName()));
                 log(tr("Connected to %1").arg(QString::fromStdString(identity.displayName())));
             });
 
-    connect(m_plot, &PainterPlotBackend::cursorMoved, this, [this](double frequency, double amplitude) {
-        m_cursorStatus->setText(tr("%1 MHz    %2 %3")
-                                    .arg(frequency / 1e6, 0, 'f', 4)
-                                    .arg(amplitude, 0, 'f', 1)
-                                    .arg(qs(amplitudeUnitKey(AmplitudeUnit::dBuV))));
-    });
+    connect(
+        m_plot, &PainterPlotBackend::cursorMoved, this, [this](double frequency, double amplitude) {
+            m_cursorStatus->setText(tr("%1 MHz    %2 %3")
+                                        .arg(frequency / 1e6, 0, 'f', 4)
+                                        .arg(amplitude, 0, 'f', 1)
+                                        .arg(qs(amplitudeUnitKey(AmplitudeUnit::dBuV))));
+        });
 
     m_session.config = m_configDock->configuration();
     m_controller->setConfiguration(m_session.config);
@@ -151,78 +164,105 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow{parent}
             .arg(qs(ProjectVersion)));
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    // The run controller is a child object, so it is still alive when ~QObject
+    // tears the children down — and its own destructor emits connectionChanged
+    // while disconnecting the instrument. By then the MainWindow half of this
+    // object is gone, and delivering that signal would call into a destroyed
+    // receiver. Sever the wiring first, then stop the run.
+    m_controller->disconnect(this);
+    m_controller->abort();
+}
 
 void MainWindow::createActions()
 {
     m_newAction = new QAction{tr("&New session"), this};
+    m_newAction->setObjectName(QStringLiteral("actionNewSession"));
     m_newAction->setShortcut(QKeySequence::New);
     connect(m_newAction, &QAction::triggered, this, &MainWindow::newSession);
 
     m_openAction = new QAction{tr("&Open session…"), this};
+    m_openAction->setObjectName(QStringLiteral("actionOpenSession"));
     m_openAction->setShortcut(QKeySequence::Open);
     connect(m_openAction, &QAction::triggered, this, &MainWindow::openSession);
 
     m_saveAction = new QAction{tr("&Save session"), this};
+    m_saveAction->setObjectName(QStringLiteral("actionSaveSession"));
     m_saveAction->setShortcut(QKeySequence::Save);
     connect(m_saveAction, &QAction::triggered, this, [this] { (void)saveSession(); });
 
     m_saveAsAction = new QAction{tr("Save session &as…"), this};
+    m_saveAsAction->setObjectName(QStringLiteral("actionSaveSessionAs"));
     m_saveAsAction->setShortcut(QKeySequence::SaveAs);
     connect(m_saveAsAction, &QAction::triggered, this, [this] { (void)saveSessionAs(); });
 
     m_metadataAction = new QAction{tr("EUT and operator &details…"), this};
+    m_metadataAction->setObjectName(QStringLiteral("actionSessionMetadata"));
     connect(m_metadataAction, &QAction::triggered, this, &MainWindow::editSessionMetadata);
 
     m_exportResultsAction = new QAction{tr("Export &results as CSV…"), this};
+    m_exportResultsAction->setObjectName(QStringLiteral("actionExportResults"));
     connect(m_exportResultsAction, &QAction::triggered, this, &MainWindow::exportResultsCsv);
 
     m_exportTraceAction = new QAction{tr("Export &trace as CSV…"), this};
+    m_exportTraceAction->setObjectName(QStringLiteral("actionExportTrace"));
     connect(m_exportTraceAction, &QAction::triggered, this, &MainWindow::exportTraceCsv);
 
     m_exportPlotAction = new QAction{tr("Export &plot as PNG or SVG…"), this};
+    m_exportPlotAction->setObjectName(QStringLiteral("actionExportPlot"));
     connect(m_exportPlotAction, &QAction::triggered, this, &MainWindow::exportPlotImage);
 
     m_reportAction = new QAction{tr("Generate PDF re&port…"), this};
+    m_reportAction->setObjectName(QStringLiteral("actionReport"));
     connect(m_reportAction, &QAction::triggered, this, &MainWindow::exportPdfReport);
 
     m_quitAction = new QAction{tr("&Quit"), this};
+    m_quitAction->setObjectName(QStringLiteral("actionQuit"));
     m_quitAction->setShortcut(QKeySequence::Quit);
     m_quitAction->setMenuRole(QAction::QuitRole);
     connect(m_quitAction, &QAction::triggered, this, &QWidget::close);
 
     m_startAction = new QAction{tr("&Start run"), this};
+    m_startAction->setObjectName(QStringLiteral("actionStartRun"));
     m_startAction->setShortcut(QKeySequence{Qt::Key_F5});
     connect(m_startAction, &QAction::triggered, this, &MainWindow::startRun);
 
     m_pauseAction = new QAction{tr("&Pause run"), this};
+    m_pauseAction->setObjectName(QStringLiteral("actionPauseRun"));
     m_pauseAction->setShortcut(QKeySequence{Qt::Key_F6});
     connect(m_pauseAction, &QAction::triggered, this, &MainWindow::togglePause);
 
     m_abortAction = new QAction{tr("&Abort run"), this};
+    m_abortAction->setObjectName(QStringLiteral("actionAbortRun"));
     m_abortAction->setShortcut(QKeySequence{Qt::Key_Escape});
     connect(m_abortAction, &QAction::triggered, this, &MainWindow::abortRun);
 
     m_disconnectAction = new QAction{tr("&Disconnect instrument"), this};
+    m_disconnectAction->setObjectName(QStringLiteral("actionDisconnect"));
     connect(m_disconnectAction, &QAction::triggered, this, [this] {
         m_controller->disconnectInstrument();
     });
 
     m_logFrequencyAction = new QAction{tr("&Logarithmic frequency axis"), this};
+    m_logFrequencyAction->setObjectName(QStringLiteral("actionLogFrequencyAxis"));
     m_logFrequencyAction->setCheckable(true);
     connect(m_logFrequencyAction, &QAction::toggled, this, [this](bool logarithmic) {
         m_plot->setLogarithmicFrequency(logarithmic);
     });
 
     m_autoScaleAction = new QAction{tr("&Auto scale plot"), this};
+    m_autoScaleAction->setObjectName(QStringLiteral("actionAutoScale"));
     m_autoScaleAction->setShortcut(QKeySequence{Qt::Key_Home});
     connect(m_autoScaleAction, &QAction::triggered, this, [this] { m_plot->autoScale(); });
 
     m_aboutAction = new QAction{tr("&About PeakEmi"), this};
+    m_aboutAction->setObjectName(QStringLiteral("actionAbout"));
     m_aboutAction->setMenuRole(QAction::AboutRole);
     connect(m_aboutAction, &QAction::triggered, this, &MainWindow::showAboutDialog);
 
     m_aboutQtAction = new QAction{tr("About &Qt"), this};
+    m_aboutQtAction->setObjectName(QStringLiteral("actionAboutQt"));
     m_aboutQtAction->setMenuRole(QAction::AboutQtRole);
     connect(m_aboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
 }
@@ -278,8 +318,8 @@ void MainWindow::createDocks()
 {
     m_instrumentDock = new InstrumentDock{this};
     addDockWidget(Qt::LeftDockWidgetArea, m_instrumentDock);
-    connect(m_instrumentDock, &InstrumentDock::connectRequested,
-            this, &MainWindow::onConnectRequested);
+    connect(
+        m_instrumentDock, &InstrumentDock::connectRequested, this, &MainWindow::onConnectRequested);
     connect(m_instrumentDock, &InstrumentDock::disconnectRequested, this, [this] {
         m_controller->disconnectInstrument();
     });
@@ -298,9 +338,8 @@ void MainWindow::createDocks()
     m_resultsDock = new ResultsDock{this};
     addDockWidget(Qt::BottomDockWidgetArea, m_resultsDock);
     connect(m_resultsDock, &ResultsDock::pointSelected, this, [this](Hertz frequency) {
-        Q_UNUSED(frequency)
-        // The plot redraws its markers with the selection applied.
-        onPeaksFlagged({});
+        m_selectedFrequency = frequency;
+        refreshMarkers();
     });
 
     m_logDock = new LogDock{this};
@@ -363,15 +402,15 @@ void MainWindow::log(const QString& message)
 
 void MainWindow::updateActionStates()
 {
-    const bool running = m_phase == MeasurementEngine::Phase::Phase1Sweep
-                         || m_phase == MeasurementEngine::Phase::PeakAnalysis
-                         || m_phase == MeasurementEngine::Phase::Phase2Dwell
-                         || m_phase == MeasurementEngine::Phase::Paused;
+    const bool running = m_phase == MeasurementEngine::Phase::Phase1Sweep ||
+                         m_phase == MeasurementEngine::Phase::PeakAnalysis ||
+                         m_phase == MeasurementEngine::Phase::Phase2Dwell ||
+                         m_phase == MeasurementEngine::Phase::Paused;
 
     m_startAction->setEnabled(m_connected && !running);
     m_pauseAction->setEnabled(running);
     m_pauseAction->setText(m_phase == MeasurementEngine::Phase::Paused ? tr("Resu&me run")
-                                                                      : tr("&Pause run"));
+                                                                       : tr("&Pause run"));
     m_abortAction->setEnabled(running);
     m_disconnectAction->setEnabled(m_connected && !running);
     m_configDock->setEditingEnabled(!running);
@@ -385,8 +424,8 @@ void MainWindow::updateActionStates()
 
 void MainWindow::updateWindowTitle()
 {
-    const QString name = m_sessionPath.isEmpty() ? tr("Untitled session")
-                                                 : QFileInfo{m_sessionPath}.fileName();
+    const QString name =
+        m_sessionPath.isEmpty() ? tr("Untitled session") : QFileInfo{m_sessionPath}.fileName();
     setWindowTitle(tr("%1%2 — PeakEmi %3")
                        .arg(name, m_dirty ? QStringLiteral("*") : QString{}, qs(ProjectVersion)));
 }
@@ -403,17 +442,15 @@ void MainWindow::showLimitOverlays()
         series.points = toPoints(limit, m_session.config.span);
         m_plot->setSeries(series);
     }
-    m_plot->setAmplitudeLabel(
-        m_session.config.limits.empty()
-            ? qs(amplitudeUnitKey(AmplitudeUnit::dBuV))
-            : qs(amplitudeUnitKey(m_session.config.limits.front().unit)));
+    m_plot->setAmplitudeLabel(m_session.config.limits.empty()
+                                  ? qs(amplitudeUnitKey(AmplitudeUnit::dBuV))
+                                  : qs(amplitudeUnitKey(m_session.config.limits.front().unit)));
 }
 
 QString MainWindow::autosavePathFor(const QString& runId) const
 {
-    const auto directory =
-        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-        + QStringLiteral("/autosave");
+    const auto directory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
+                           QStringLiteral("/autosave");
     QDir{}.mkpath(directory);
     return directory + QStringLiteral("/run-") + runId + QStringLiteral(".peakemi.json");
 }
@@ -450,9 +487,8 @@ void MainWindow::onConnectRequested(TransportDescriptor descriptor, QString driv
 
     if (!driver) {
         auto& registry = hal::DriverRegistry::instance();
-        auto created = driverId.isEmpty()
-                           ? registry.createBestMatch(InstrumentId{})
-                           : registry.create(driverId.toStdString());
+        auto created = driverId.isEmpty() ? registry.createBestMatch(InstrumentId{})
+                                          : registry.create(driverId.toStdString());
         if (!created && driverId.isEmpty()) {
             // No identity yet: probe the endpoint, then match on the response.
             auto identity = hal::identifyEndpoint(descriptor, descriptor.defaultTimeout);
@@ -473,9 +509,8 @@ void MainWindow::onConnectRequested(TransportDescriptor descriptor, QString driv
                 return;
             }
         } else if (!created) {
-            QMessageBox::warning(this,
-                                 tr("Driver unavailable"),
-                                 QString::fromStdString(created.error().message()));
+            QMessageBox::warning(
+                this, tr("Driver unavailable"), QString::fromStdString(created.error().message()));
             return;
         }
         driver = *created;
@@ -525,20 +560,28 @@ void MainWindow::onTraceAcquired(TracePtr trace)
 
 void MainWindow::onPeaksFlagged(std::vector<PeakCandidate> peaks)
 {
-    if (!peaks.empty()) {
-        QVector<PlotMarker> markers;
-        markers.reserve(static_cast<qsizetype>(peaks.size()));
-        for (const auto& peak : peaks) {
-            markers.append(PlotMarker{
-                .label = QStringLiteral("%1").arg(toMegahertz(peak.frequency), 0, 'f', 2),
-                .position = QPointF{static_cast<double>(peak.frequency.value()), peak.amplitude},
-                .colour = QColor{0xF9, 0xAB, 0x00},
-                .selected = false});
-        }
-        m_plot->setMarkers(markers);
-        log(tr("%n peak(s) flagged for Phase 2 verification.", nullptr,
-               static_cast<int>(peaks.size())));
+    m_peaks = std::move(peaks);
+    refreshMarkers();
+    if (!m_peaks.empty()) {
+        log(tr("%n peak(s) flagged for Phase 2 verification.",
+               nullptr,
+               static_cast<int>(m_peaks.size())));
     }
+}
+
+void MainWindow::refreshMarkers()
+{
+    QVector<PlotMarker> markers;
+    markers.reserve(static_cast<qsizetype>(m_peaks.size()));
+    for (const auto& peak : m_peaks) {
+        markers.append(PlotMarker{
+            .label = QStringLiteral("%1").arg(toMegahertz(peak.frequency), 0, 'f', 2),
+            .position = QPointF{static_cast<double>(peak.frequency.value()), peak.amplitude},
+            .colour =
+                peak.verdict == Verdict::Fail ? QColor{0xC0, 0x39, 0x2B} : QColor{0xF9, 0xAB, 0x00},
+            .selected = peak.frequency == m_selectedFrequency});
+    }
+    m_plot->setMarkers(markers);
 }
 
 void MainWindow::onPointMeasured(MeasurementPoint point)
@@ -552,8 +595,8 @@ void MainWindow::onPointMeasured(MeasurementPoint point)
     verified.colour = QColor{0x0B, 0x80, 0x43};
     verified.style = PlotStyle::Points;
     for (const auto& stored : m_resultsDock->points()) {
-        verified.points.append(QPointF{static_cast<double>(stored.frequency.value()),
-                                       stored.correctedAmplitude});
+        verified.points.append(
+            QPointF{static_cast<double>(stored.frequency.value()), stored.correctedAmplitude});
     }
     m_plot->setSeries(verified);
 
@@ -568,8 +611,9 @@ void MainWindow::onProgress(int completed, int total, qint64 estimatedRemainingM
     m_progress->setRange(0, std::max(total, 1));
     m_progress->setValue(completed);
     if (estimatedRemainingMs > 0) {
-        m_progress->setFormat(tr("%p%  ~%1 s left")
-                                  .arg(static_cast<double>(estimatedRemainingMs) / 1000.0, 0, 'f', 0));
+        m_progress->setFormat(
+            tr("%p%  ~%1 s left")
+                .arg(static_cast<double>(estimatedRemainingMs) / 1000.0, 0, 'f', 0));
     } else {
         m_progress->setFormat(QStringLiteral("%p%"));
     }
@@ -598,17 +642,16 @@ void MainWindow::startRun()
 {
     m_session.config = m_configDock->configuration();
     if (auto status = m_session.config.validate(); !status) {
-        QMessageBox::warning(this,
-                             tr("Configuration incomplete"),
-                             QString::fromStdString(status.error().message()));
+        QMessageBox::warning(
+            this, tr("Configuration incomplete"), QString::fromStdString(status.error().message()));
         return;
     }
-    if (m_session.config.limits.empty()
-        && QMessageBox::question(this,
-                                 tr("No limit line selected"),
-                                 tr("Without a limit line no peak can be flagged and Phase 2 "
-                                    "will not run. Continue anyway?"))
-               != QMessageBox::Yes) {
+    if (m_session.config.limits.empty() &&
+        QMessageBox::question(this,
+                              tr("No limit line selected"),
+                              tr("Without a limit line no peak can be flagged and Phase 2 "
+                                 "will not run. Continue anyway?")) != QMessageBox::Yes)
+    {
         return;
     }
 
@@ -621,6 +664,8 @@ void MainWindow::startRun()
 
     m_resultsDock->clear();
     m_session.results.clear();
+    m_peaks.clear();
+    m_selectedFrequency = Hertz{0};
     m_plot->setMarkers({});
     m_plot->removeSeries(QStringLiteral("phase2"));
     showLimitOverlays();
@@ -642,17 +687,18 @@ void MainWindow::togglePause()
 
 void MainWindow::abortRun()
 {
-    if (m_phase != MeasurementEngine::Phase::Phase1Sweep
-        && m_phase != MeasurementEngine::Phase::Phase2Dwell
-        && m_phase != MeasurementEngine::Phase::PeakAnalysis
-        && m_phase != MeasurementEngine::Phase::Paused) {
+    if (m_phase != MeasurementEngine::Phase::Phase1Sweep &&
+        m_phase != MeasurementEngine::Phase::Phase2Dwell &&
+        m_phase != MeasurementEngine::Phase::PeakAnalysis &&
+        m_phase != MeasurementEngine::Phase::Paused)
+    {
         return;
     }
     if (QMessageBox::question(this,
                               tr("Abort run"),
                               tr("Abort the running measurement? Results collected so far are "
-                                 "kept."))
-        != QMessageBox::Yes) {
+                                 "kept.")) != QMessageBox::Yes)
+    {
         return;
     }
     m_controller->abort();
@@ -680,10 +726,8 @@ void MainWindow::openSession()
     if (!confirmDiscardChanges()) {
         return;
     }
-    const auto path = QFileDialog::getOpenFileName(this,
-                                                   tr("Open session"),
-                                                   {},
-                                                   tr("PeakEmi sessions (*.json);;All files (*)"));
+    const auto path = QFileDialog::getOpenFileName(
+        this, tr("Open session"), {}, tr("PeakEmi sessions (*.json);;All files (*)"));
     if (!path.isEmpty()) {
         openSessionFile(path);
     }
@@ -693,9 +737,8 @@ void MainWindow::openSessionFile(const QString& path)
 {
     auto session = SessionSerializer::load(path);
     if (!session) {
-        QMessageBox::warning(this,
-                             tr("Cannot open session"),
-                             QString::fromStdString(session.error().message()));
+        QMessageBox::warning(
+            this, tr("Cannot open session"), QString::fromStdString(session.error().message()));
         return;
     }
 
@@ -730,9 +773,8 @@ bool MainWindow::saveSession()
     }
     m_session.meta.modifiedAt = std::chrono::system_clock::now();
     if (auto status = SessionSerializer::save(m_session, m_sessionPath); !status) {
-        QMessageBox::warning(this,
-                             tr("Cannot save session"),
-                             QString::fromStdString(status.error().message()));
+        QMessageBox::warning(
+            this, tr("Cannot save session"), QString::fromStdString(status.error().message()));
         return false;
     }
     m_dirty = false;
@@ -743,10 +785,8 @@ bool MainWindow::saveSession()
 
 bool MainWindow::saveSessionAs()
 {
-    const auto path = QFileDialog::getSaveFileName(this,
-                                                   tr("Save session"),
-                                                   QStringLiteral("session.json"),
-                                                   tr("PeakEmi sessions (*.json)"));
+    const auto path = QFileDialog::getSaveFileName(
+        this, tr("Save session"), QStringLiteral("session.json"), tr("PeakEmi sessions (*.json)"));
     if (path.isEmpty()) {
         return false;
     }
@@ -764,7 +804,8 @@ void MainWindow::editSessionMetadata()
     auto* eutSerial = new QLineEdit{QString::fromStdString(m_session.meta.eutSerial), &dialog};
     auto* mode = new QLineEdit{QString::fromStdString(m_session.meta.eutOperatingMode), &dialog};
     auto* setup = new QLineEdit{QString::fromStdString(m_session.meta.testSetup), &dialog};
-    auto* operatorName = new QLineEdit{QString::fromStdString(m_session.meta.operatorName), &dialog};
+    auto* operatorName =
+        new QLineEdit{QString::fromStdString(m_session.meta.operatorName), &dialog};
     auto* company = new QLineEdit{QString::fromStdString(m_session.meta.company), &dialog};
     auto* notes = new QPlainTextEdit{QString::fromStdString(m_session.meta.notes), &dialog};
 
@@ -799,17 +840,15 @@ void MainWindow::editSessionMetadata()
 
 void MainWindow::exportResultsCsv()
 {
-    const auto path = QFileDialog::getSaveFileName(this,
-                                                   tr("Export results"),
-                                                   QStringLiteral("results.csv"),
-                                                   tr("CSV files (*.csv)"));
+    const auto path = QFileDialog::getSaveFileName(
+        this, tr("Export results"), QStringLiteral("results.csv"), tr("CSV files (*.csv)"));
     if (path.isEmpty()) {
         return;
     }
     m_session.results = m_resultsDock->points();
     if (auto status = reporting::csv::writeResults(m_session, path); !status) {
-        QMessageBox::warning(this, tr("Export failed"),
-                             QString::fromStdString(status.error().message()));
+        QMessageBox::warning(
+            this, tr("Export failed"), QString::fromStdString(status.error().message()));
         return;
     }
     log(tr("Results exported to %1").arg(path));
@@ -820,17 +859,15 @@ void MainWindow::exportTraceCsv()
     if (m_session.traces.empty()) {
         return;
     }
-    const auto path = QFileDialog::getSaveFileName(this,
-                                                   tr("Export trace"),
-                                                   QStringLiteral("trace.csv"),
-                                                   tr("CSV files (*.csv)"));
+    const auto path = QFileDialog::getSaveFileName(
+        this, tr("Export trace"), QStringLiteral("trace.csv"), tr("CSV files (*.csv)"));
     if (path.isEmpty()) {
         return;
     }
-    if (auto status = reporting::csv::writeTrace(m_session, m_session.traces.back(), path);
-        !status) {
-        QMessageBox::warning(this, tr("Export failed"),
-                             QString::fromStdString(status.error().message()));
+    if (auto status = reporting::csv::writeTrace(m_session, m_session.traces.back(), path); !status)
+    {
+        QMessageBox::warning(
+            this, tr("Export failed"), QString::fromStdString(status.error().message()));
         return;
     }
     log(tr("Trace exported to %1").arg(path));
@@ -859,10 +896,8 @@ void MainWindow::exportPlotImage()
 
 void MainWindow::exportPdfReport()
 {
-    const auto path = QFileDialog::getSaveFileName(this,
-                                                   tr("Generate report"),
-                                                   QStringLiteral("report.pdf"),
-                                                   tr("PDF documents (*.pdf)"));
+    const auto path = QFileDialog::getSaveFileName(
+        this, tr("Generate report"), QStringLiteral("report.pdf"), tr("PDF documents (*.pdf)"));
     if (path.isEmpty()) {
         return;
     }
@@ -874,8 +909,8 @@ void MainWindow::exportPdfReport()
     reporting::PdfReportRenderer renderer;
     renderer.setPlotImage(m_plot->renderToImage(QSize{1600, 900}));
     if (auto status = renderer.render(m_session, reportTemplate, path); !status) {
-        QMessageBox::warning(this, tr("Report failed"),
-                             QString::fromStdString(status.error().message()));
+        QMessageBox::warning(
+            this, tr("Report failed"), QString::fromStdString(status.error().message()));
         return;
     }
     log(tr("Report written to %1").arg(path));
@@ -913,10 +948,12 @@ void MainWindow::showAboutDialog()
 void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (m_controller->isRunning()) {
-        if (QMessageBox::question(this,
-                                  tr("Run in progress"),
-                                  tr("A measurement run is still in progress. Abort it and quit?"))
-            != QMessageBox::Yes) {
+        if (QMessageBox::question(
+                this,
+                tr("Run in progress"),
+                tr("A measurement run is still in progress. Abort it and quit?")) !=
+            QMessageBox::Yes)
+        {
             event->ignore();
             return;
         }

@@ -1,6 +1,6 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/hal/TcpScpiTransport.hpp>
-#include <peakemi/hal/Scpi.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/hal/Scpi.h>
+#include <peakemi/hal/TcpScpiTransport.h>
 
 #include <QElapsedTimer>
 #include <QTcpSocket>
@@ -18,8 +18,7 @@ constexpr int WaitSliceMs = 25;
 
 TcpScpiTransport::TcpScpiTransport(TransportDescriptor descriptor)
     : m_descriptor{std::move(descriptor)}
-{
-}
+{}
 
 TcpScpiTransport::~TcpScpiTransport()
 {
@@ -39,8 +38,7 @@ Status TcpScpiTransport::open()
     if (!m_socket->waitForConnected(static_cast<int>(m_descriptor.defaultTimeout.count()))) {
         const auto reason = m_socket->errorString().toStdString();
         m_socket.reset();
-        return fail(ErrorCode::TransportFailure,
-                    m_descriptor.displayName() + ": " + reason);
+        return fail(ErrorCode::TransportFailure, m_descriptor.displayName() + ": " + reason);
     }
     m_socket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
     qCInfo(lcTransport) << "connected to" << host << m_descriptor.port;
@@ -74,7 +72,8 @@ Status TcpScpiTransport::write(std::string_view command)
 
     qint64 written = 0;
     while (written < payload.size()) {
-        const qint64 chunk = m_socket->write(payload.constData() + written, payload.size() - written);
+        const qint64 chunk =
+            m_socket->write(payload.constData() + written, payload.size() - written);
         if (chunk < 0) {
             return fail(ErrorCode::TransportFailure, m_socket->errorString().toStdString());
         }
@@ -102,8 +101,8 @@ Status TcpScpiTransport::pump(std::chrono::milliseconds timeout,
         }
         if (elapsed.elapsed() >= timeout.count()) {
             return fail(ErrorCode::Timeout,
-                        "no response from " + m_descriptor.displayName() + " within "
-                            + std::to_string(timeout.count()) + " ms");
+                        "no response from " + m_descriptor.displayName() + " within " +
+                            std::to_string(timeout.count()) + " ms");
         }
         if (m_socket->waitForReadyRead(WaitSliceMs)) {
             m_buffer.append(m_socket->readAll());
@@ -122,8 +121,8 @@ Result<std::string> TcpScpiTransport::read(std::chrono::milliseconds timeout,
         return fail(ErrorCode::NotConnected, m_descriptor.displayName());
     }
     const QByteArray terminator = QByteArray::fromStdString(m_descriptor.terminator);
-    if (auto status = pump(timeout, cancel, [&] { return m_buffer.contains(terminator); });
-        !status) {
+    if (auto status = pump(timeout, cancel, [&] { return m_buffer.contains(terminator); }); !status)
+    {
         return std::unexpected(status.error());
     }
 
@@ -149,8 +148,8 @@ Result<std::vector<std::byte>> TcpScpiTransport::readBinaryBlock(std::chrono::mi
     if (m_buffer.at(0) != '#' || digits <= 0) {
         return fail(ErrorCode::ProtocolViolation, "expected a definite-length block header");
     }
-    if (auto status = pump(timeout, cancel, [&] { return m_buffer.size() >= 2 + digits; });
-        !status) {
+    if (auto status = pump(timeout, cancel, [&] { return m_buffer.size() >= 2 + digits; }); !status)
+    {
         return std::unexpected(status.error());
     }
 
@@ -165,9 +164,7 @@ Result<std::vector<std::byte>> TcpScpiTransport::readBinaryBlock(std::chrono::mi
     }
 
     std::vector<std::byte> payload(header->payloadSize);
-    std::memcpy(payload.data(),
-                m_buffer.constData() + header->headerSize,
-                header->payloadSize);
+    std::memcpy(payload.data(), m_buffer.constData() + header->headerSize, header->payloadSize);
     m_buffer.remove(0, total);
     qCDebug(lcScpi) << "< binary block of" << header->payloadSize << "bytes";
     return payload;

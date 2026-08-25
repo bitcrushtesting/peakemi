@@ -3,8 +3,8 @@ peakemi_add_module(reporting
         writers/CsvExporter.cpp
         writers/PdfReportRenderer.cpp
     HEADERS
-        include/peakemi/reporting/CsvExporter.hpp
-        include/peakemi/reporting/PdfReportRenderer.hpp
+        include/peakemi/reporting/CsvExporter.h
+        include/peakemi/reporting/PdfReportRenderer.h
     PUBLIC
         peakemi::core
         Qt6::Core

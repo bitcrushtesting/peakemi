@@ -10,15 +10,15 @@ peakemi_add_module(ui
         plot/PainterPlotBackend.cpp
         windows/MainWindow.cpp
     HEADERS
-        include/peakemi/ui/IPlotBackend.hpp
-        include/peakemi/ui/InstrumentDock.hpp
-        include/peakemi/ui/LogDock.hpp
-        include/peakemi/ui/MainWindow.hpp
-        include/peakemi/ui/PainterPlotBackend.hpp
-        include/peakemi/ui/ResultsDock.hpp
-        include/peakemi/ui/ResultsTableModel.hpp
-        include/peakemi/ui/RunConfigDock.hpp
-        include/peakemi/ui/RunController.hpp
+        include/peakemi/ui/IPlotBackend.h
+        include/peakemi/ui/InstrumentDock.h
+        include/peakemi/ui/LogDock.h
+        include/peakemi/ui/MainWindow.h
+        include/peakemi/ui/PainterPlotBackend.h
+        include/peakemi/ui/ResultsDock.h
+        include/peakemi/ui/ResultsTableModel.h
+        include/peakemi/ui/RunConfigDock.h
+        include/peakemi/ui/RunController.h
     PUBLIC
         peakemi::core
         peakemi::hal

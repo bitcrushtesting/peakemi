@@ -1,4 +1,4 @@
-#include <peakemi/core/PeakDetector.hpp>
+#include <peakemi/core/PeakDetector.h>
 
 #include <QTest>
 
@@ -9,7 +9,8 @@ using namespace peakemi;
 namespace {
 
 /// Flat noise floor at 10 dB with narrow emitters injected at chosen bins.
-[[nodiscard]] Trace makeTrace(const std::vector<std::pair<int, double>>& emitters, int points = 1001)
+[[nodiscard]] Trace makeTrace(const std::vector<std::pair<int, double>>& emitters,
+                              int points = 1001)
 {
     Trace trace;
     trace.axis = FrequencyAxis::linear(FrequencyRange{megahertz(30), megahertz(1030)}, points);
@@ -76,18 +77,25 @@ void PeakDetectorTest::ignoresPeaksWellBelowTheLimit()
 
 void PeakDetectorTest::respectsProminence()
 {
+    // A broad Gaussian hump carrying small ripples: one real emission, plus
+    // measurement grass that must not each become a Phase 2 dwell.
     Trace trace = makeTrace({});
-    // A broad, gentle hump: high enough to matter but with no sharp peak.
-    for (int i = 400; i < 600; ++i) {
-        trace.amplitudes[static_cast<std::size_t>(i)] = 38.0 + 0.5 * std::sin(i * 0.05);
+    for (int i = 0; i < trace.size(); ++i) {
+        const double offset = (i - 500) / 40.0;
+        const double hump = 28.0 * std::exp(-offset * offset);
+        const double ripple = 0.6 * std::sin(i * 1.7);
+        trace.amplitudes[static_cast<std::size_t>(i)] = 10.0 + hump + ripple;
     }
+
     PeakDetectionSettings settings;
     settings.prominenceDb = 3.0;
-    settings.minimumSpacing = megahertz(1);
-    QVERIFY(detectPeaks(trace, flatLimit(40.0), settings).empty());
+    settings.minimumSpacing = hertz(0); // isolate the prominence filter
+    const auto prominentOnly = detectPeaks(trace, flatLimit(40.0), settings);
+    QCOMPARE(prominentOnly.size(), 1U);
+    QCOMPARE(prominentOnly.front().index, 500);
 
-    settings.prominenceDb = 0.2;
-    QVERIFY(!detectPeaks(trace, flatLimit(40.0), settings).empty());
+    settings.prominenceDb = 0.1;
+    QVERIFY(detectPeaks(trace, flatLimit(40.0), settings).size() > 5U);
 }
 
 void PeakDetectorTest::deduplicatesByMinimumSpacing()

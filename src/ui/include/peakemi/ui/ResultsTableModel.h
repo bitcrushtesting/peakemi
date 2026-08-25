@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/MeasurementPoint.hpp>
+#include <peakemi/core/MeasurementPoint.h>
 
 #include <QAbstractTableModel>
 
@@ -42,15 +42,15 @@ public:
     [[nodiscard]] int rowCount(const QModelIndex& parent = {}) const override;
     [[nodiscard]] int columnCount(const QModelIndex& parent = {}) const override;
     [[nodiscard]] QVariant data(const QModelIndex& index, int role) const override;
-    [[nodiscard]] QVariant headerData(int section,
-                                      Qt::Orientation orientation,
-                                      int role) const override;
+    [[nodiscard]] QVariant
+    headerData(int section, Qt::Orientation orientation, int role) const override;
 
     void setPoints(std::vector<MeasurementPoint> points);
     void appendPoint(const MeasurementPoint& point);
     void clear();
 
     [[nodiscard]] const std::vector<MeasurementPoint>& points() const { return m_points; }
+
     [[nodiscard]] const MeasurementPoint* pointAt(int row) const;
 
 private:

@@ -1,5 +1,5 @@
-#include <peakemi/core/CisprBands.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/core/RunConfiguration.h>
 
 #include <algorithm>
 #include <cmath>
@@ -59,8 +59,8 @@ std::vector<FrequencyRange> RunConfiguration::planSegments() const
         return segments;
     }
 
-    const auto count = static_cast<int>(
-        std::ceil(static_cast<double>(span.width().value()) / static_cast<double>(maximumWidth.value())));
+    const auto count = static_cast<int>(std::ceil(static_cast<double>(span.width().value()) /
+                                                  static_cast<double>(maximumWidth.value())));
     const Hertz step = span.width() / count;
     Hertz start = span.start;
     for (int i = 0; i < count; ++i) {

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/InstrumentId.hpp>
-#include <peakemi/core/SweepParams.hpp>
-#include <peakemi/core/Time.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/InstrumentId.h>
+#include <peakemi/core/SweepParams.h>
+#include <peakemi/core/Time.h>
+#include <peakemi/core/Units.h>
 
 #include <memory>
 #include <string>

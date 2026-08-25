@@ -1,5 +1,5 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/drivers/SimulatedDriver.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/drivers/SimulatedDriver.h>
 
 #include <QThread>
 
@@ -45,6 +45,11 @@ namespace {
 SimulatedInstrumentConfig SimulatedInstrumentConfig::demoBench()
 {
     SimulatedInstrumentConfig config;
+    // A quiet chamber floor: once a typical antenna factor of 13-25 dB is added
+    // the corrected floor lands near 20-30 dBuV/m, below CISPR 32 class B. The
+    // emitters below are what breaks the limit, which is what a pre-compliance
+    // scan is supposed to show.
+    config.noiseFloor = 6.0;
     config.emitters = {
         // 48 MHz oscillator and its harmonics: the classic radiated offender.
         SimulatedEmitter{.frequency = megahertz(48),
@@ -75,27 +80,44 @@ SimulatedInstrumentConfig SimulatedInstrumentConfig::demoBench()
 
 SimulatedDriver::SimulatedDriver(SimulatedInstrumentConfig config) : m_config{std::move(config)}
 {
-    m_capabilities = Capabilities{
-        .range = FrequencyRange{hertz(9000), gigahertz(3.2)},
-        .minimumPoints = 101,
-        .maximumPoints = 40001,
-        .detectors = {Detector::Peak, Detector::QuasiPeak, Detector::Average, Detector::Rms,
-                      Detector::Sample},
-        .resolutionBandwidths = {hertz(10), hertz(30), hertz(100), hertz(200), hertz(300),
-                                 kilohertz(1), kilohertz(3), kilohertz(9), kilohertz(10),
-                                 kilohertz(30), kilohertz(100), kilohertz(120), kilohertz(300),
-                                 megahertz(1)},
-        .videoBandwidths = {hertz(10), hertz(100), kilohertz(1), kilohertz(10), kilohertz(100),
-                            megahertz(1), megahertz(3)},
-        .minimumAttenuation = decibel(0.0),
-        .maximumAttenuation = decibel(40.0),
-        .attenuationStep = decibel(5.0),
-        .minimumRefLevel = decibel(-100.0),
-        .maximumRefLevel = decibel(120.0),
-        .preamp = true,
-        .trackingGenerator = false,
-        .zeroSpan = true,
-        .nativeUnit = m_config.unit};
+    m_capabilities = Capabilities{.range = FrequencyRange{hertz(9000), gigahertz(3.2)},
+                                  .minimumPoints = 101,
+                                  .maximumPoints = 40001,
+                                  .detectors = {Detector::Peak,
+                                                Detector::QuasiPeak,
+                                                Detector::Average,
+                                                Detector::Rms,
+                                                Detector::Sample},
+                                  .resolutionBandwidths = {hertz(10),
+                                                           hertz(30),
+                                                           hertz(100),
+                                                           hertz(200),
+                                                           hertz(300),
+                                                           kilohertz(1),
+                                                           kilohertz(3),
+                                                           kilohertz(9),
+                                                           kilohertz(10),
+                                                           kilohertz(30),
+                                                           kilohertz(100),
+                                                           kilohertz(120),
+                                                           kilohertz(300),
+                                                           megahertz(1)},
+                                  .videoBandwidths = {hertz(10),
+                                                      hertz(100),
+                                                      kilohertz(1),
+                                                      kilohertz(10),
+                                                      kilohertz(100),
+                                                      megahertz(1),
+                                                      megahertz(3)},
+                                  .minimumAttenuation = decibel(0.0),
+                                  .maximumAttenuation = decibel(40.0),
+                                  .attenuationStep = decibel(5.0),
+                                  .minimumRefLevel = decibel(-100.0),
+                                  .maximumRefLevel = decibel(120.0),
+                                  .preamp = true,
+                                  .trackingGenerator = false,
+                                  .zeroSpan = true,
+                                  .nativeUnit = m_config.unit};
 }
 
 SimulatedDriver::~SimulatedDriver()
@@ -174,9 +196,8 @@ Status SimulatedDriver::armAndTrigger(const CancelToken& cancel)
     m_abortRequested.store(false);
 
     // Model the sweep taking time, in slices, so cancellation is observable.
-    const auto configured = m_params.sweepTime.count() > 0
-                                ? m_params.sweepTime
-                                : std::chrono::milliseconds{50};
+    const auto configured =
+        m_params.sweepTime.count() > 0 ? m_params.sweepTime : std::chrono::milliseconds{50};
     const auto simulated = std::chrono::milliseconds{
         static_cast<std::int64_t>(static_cast<double>(configured.count()) * m_config.timeScale)};
     constexpr std::int64_t SliceMs = 20;
@@ -201,7 +222,8 @@ double SimulatedDriver::amplitudeAt(Hertz frequency, Detector detector) const
         for (int harmonic = 2; harmonic <= emitter.harmonics + 1; ++harmonic) {
             const Hertz centre = emitter.frequency * harmonic;
             const double amplitude =
-                emitter.amplitude - emitter.harmonicRolloffDb * std::log2(static_cast<double>(harmonic));
+                emitter.amplitude -
+                emitter.harmonicRolloffDb * std::log2(static_cast<double>(harmonic));
             linear += emitterContribution(emitter, centre, amplitude, frequency);
         }
     }
@@ -251,9 +273,8 @@ Result<Trace> SimulatedDriver::fetchTrace(const CancelToken& cancel)
         const double floorLevel = noise(generator);
         const double signal = amplitudeAt(frequency, m_params.detector);
         // Powers add, not decibels.
-        const double linear =
-            std::pow(10.0, floorLevel / 20.0)
-            + (std::isfinite(signal) ? std::pow(10.0, signal / 20.0) : 0.0);
+        const double linear = std::pow(10.0, floorLevel / 20.0) +
+                              (std::isfinite(signal) ? std::pow(10.0, signal / 20.0) : 0.0);
         trace.amplitudes.push_back(20.0 * std::log10(linear));
     }
     return trace;

@@ -1,4 +1,4 @@
-#include <peakemi/core/CorrectionTable.hpp>
+#include <peakemi/core/CorrectionTable.h>
 
 #include <algorithm>
 #include <array>
@@ -50,12 +50,11 @@ double CorrectionTable::valueAt(Hertz frequency) const
         return points.back().second;
     }
 
-    const auto upper = std::lower_bound(points.begin(),
-                                        points.end(),
-                                        frequency,
-                                        [](const std::pair<Hertz, double>& point, Hertz value) {
-                                            return point.first < value;
-                                        });
+    const auto upper = std::lower_bound(
+        points.begin(),
+        points.end(),
+        frequency,
+        [](const std::pair<Hertz, double>& point, Hertz value) { return point.first < value; });
     if (upper == points.begin()) {
         return upper->second;
     }
@@ -119,8 +118,8 @@ AmplitudeUnit resultingUnit(AmplitudeUnit input, std::span<const CorrectionTable
 {
     const bool hasAntennaFactor =
         std::any_of(tables.begin(), tables.end(), [](const CorrectionTable& table) {
-            return table.enabled && table.kind == CorrectionKind::AntennaFactor
-                   && !table.points.empty();
+            return table.enabled && table.kind == CorrectionKind::AntennaFactor &&
+                   !table.points.empty();
         });
     return hasAntennaFactor ? AmplitudeUnit::dBuV_per_m : input;
 }

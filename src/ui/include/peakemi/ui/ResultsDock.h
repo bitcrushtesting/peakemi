@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/MeasurementPoint.hpp>
+#include <peakemi/core/MeasurementPoint.h>
 
 #include <QDockWidget>
 

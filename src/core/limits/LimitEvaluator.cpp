@@ -1,4 +1,4 @@
-#include <peakemi/core/LimitEvaluator.hpp>
+#include <peakemi/core/LimitEvaluator.h>
 
 #include <cmath>
 #include <limits>
@@ -9,8 +9,7 @@ namespace peakemi {
 LimitEvaluator::LimitEvaluator(std::vector<LimitLine> lines, double marginalThresholdDb)
     : m_lines{std::move(lines)}
     , m_marginalThresholdDb{marginalThresholdDb}
-{
-}
+{}
 
 void LimitEvaluator::setLimitLines(std::vector<LimitLine> lines)
 {
@@ -88,8 +87,9 @@ WorstCase worstCaseInBand(std::span<const MarginResult> results, FrequencyRange 
 {
     WorstCase worst;
     for (const auto& result : results) {
-        if (!band.contains(result.frequency) || result.limitIndex < 0
-            || !std::isfinite(result.marginDb)) {
+        if (!band.contains(result.frequency) || result.limitIndex < 0 ||
+            !std::isfinite(result.marginDb))
+        {
             continue;
         }
         if (!worst.valid || result.marginDb < worst.result.marginDb) {

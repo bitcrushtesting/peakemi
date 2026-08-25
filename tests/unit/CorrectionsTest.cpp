@@ -1,5 +1,5 @@
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/LimitLineIo.hpp>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/LimitLineIo.h>
 
 #include <QTest>
 

@@ -4,6 +4,7 @@ include_guard(GLOBAL)
 include(CMakeDependentOption)
 
 option(PEAKEMI_BUILD_TESTS        "Build the PeakEmi test suite"                 ON)
+option(PEAKEMI_BUILD_TOOLS        "Build developer tools (documentation screenshots)" OFF)
 option(PEAKEMI_WITH_PYTHON        "Embed CPython for Python driver plugins"      OFF)
 option(PEAKEMI_WITH_USBTMC        "Build the USBTMC transport (requires libusb)" OFF)
 option(PEAKEMI_WITH_VISA          "Enable the optional VISA transport"           OFF)

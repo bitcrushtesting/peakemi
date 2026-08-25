@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/ITransport.hpp>
-#include <peakemi/core/InstrumentId.hpp>
+#include <peakemi/core/ITransport.h>
+#include <peakemi/core/InstrumentId.h>
 
 #include <QList>
 #include <QObject>
@@ -33,7 +33,7 @@ class LanDiscoveryWorker : public QObject
 public:
     struct Settings
     {
-        QString subnetPrefix;                          ///< e.g. "192.168.1"
+        QString subnetPrefix; ///< e.g. "192.168.1"
         QList<quint16> ports{5025, 5555};
         int concurrency{32};
         std::chrono::milliseconds hostTimeout{300};

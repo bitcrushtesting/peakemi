@@ -7,11 +7,11 @@ peakemi_add_module(hal
         transport/SerialScpiTransport.cpp
         transport/TcpScpiTransport.cpp
     HEADERS
-        include/peakemi/hal/Discovery.hpp
-        include/peakemi/hal/DriverRegistry.hpp
-        include/peakemi/hal/Scpi.hpp
-        include/peakemi/hal/SerialScpiTransport.hpp
-        include/peakemi/hal/TcpScpiTransport.hpp
+        include/peakemi/hal/Discovery.h
+        include/peakemi/hal/DriverRegistry.h
+        include/peakemi/hal/Scpi.h
+        include/peakemi/hal/SerialScpiTransport.h
+        include/peakemi/hal/TcpScpiTransport.h
     PUBLIC
         peakemi::core
         Qt6::Core

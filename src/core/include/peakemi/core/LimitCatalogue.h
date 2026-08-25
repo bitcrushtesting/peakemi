@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/LimitLine.hpp>
+#include <peakemi/core/LimitLine.h>
 
 #include <optional>
 #include <span>
