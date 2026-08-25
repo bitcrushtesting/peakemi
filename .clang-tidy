@@ -59,8 +59,10 @@ CheckOptions:
     value: CamelCase
   - key:   readability-identifier-naming.EnumCase
     value: CamelCase
+  # aNy, not CamelCase: amplitude units keep the spelling the domain uses
+  # (dBm, dBuV, dBuV_per_m), which no case convention describes.
   - key:   readability-identifier-naming.EnumConstantCase
-    value: CamelCase
+    value: aNy
   - key:   readability-identifier-naming.FunctionCase
     value: camelBack
   - key:   readability-identifier-naming.MethodCase

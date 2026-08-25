@@ -31,7 +31,11 @@ Hertz FrequencyAxis::frequencyAt(int index) const
     }
     const double fraction = static_cast<double>(index) / static_cast<double>(points - 1);
     const double width = static_cast<double>((stop - start).value());
-    return start + Hertz{static_cast<std::int64_t>(std::llround(fraction * width))};
+    // Assigned rather than cast: std::llround already returns a 64-bit integer,
+    // and on platforms where that is the same type as Hertz::Representation an
+    // explicit cast trips -Wuseless-cast.
+    const std::int64_t offset = std::llround(fraction * width);
+    return start + Hertz{offset};
 }
 
 int FrequencyAxis::nearestIndex(Hertz frequency) const
