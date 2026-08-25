@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/Capabilities.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
+#include <peakemi/core/Capabilities.h>
+#include <peakemi/core/RunConfiguration.h>
 
 #include <QDockWidget>
 

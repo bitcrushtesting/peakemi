@@ -1,7 +1,7 @@
-#include <peakemi/core/LimitCatalogue.hpp>
-#include <peakemi/core/LimitEvaluator.hpp>
-#include <peakemi/core/LimitLine.hpp>
-#include <peakemi/core/LimitLineIo.hpp>
+#include <peakemi/core/LimitCatalogue.h>
+#include <peakemi/core/LimitEvaluator.h>
+#include <peakemi/core/LimitLine.h>
+#include <peakemi/core/LimitLineIo.h>
 
 #include <QTest>
 
@@ -19,8 +19,8 @@ namespace {
     line.points = {
         LimitPoint{kilohertz(150), 66.0, Interpolation::LogFrequency},
         LimitPoint{kilohertz(500), 56.0, Interpolation::Step},
-        LimitPoint{megahertz(5), 56.0, Interpolation::Step},
-        LimitPoint{megahertz(30), 60.0, Interpolation::LogFrequency},
+        LimitPoint{megahertz(5), 60.0, Interpolation::Step},
+        LimitPoint{megahertz(30), 60.0, Interpolation::Step},
     };
     return line;
 }
@@ -73,10 +73,13 @@ void LimitsTest::stepSegmentsHoldTheirValue()
     const auto line = makeLine();
     QCOMPARE(line.evaluateAt(megahertz(1)), 56.0);
     QCOMPARE(line.evaluateAt(megahertz(4)), 56.0);
-    QCOMPARE(line.evaluateAt(megahertz(5)), 56.0);
-    // Above 5 MHz the last segment interpolates towards 60 dBuV.
-    QVERIFY(line.evaluateAt(megahertz(20)) > 56.0);
-    QVERIFY(line.evaluateAt(megahertz(20)) < 60.0);
+    QCOMPARE(line.evaluateAt(hertz(4'999'999)), 56.0);
+
+    // The band edge at 5 MHz is a genuine discontinuity, not a ramp: the CISPR
+    // conducted limit steps from 56 to 60 dBuV and stays there to 30 MHz.
+    QCOMPARE(line.evaluateAt(megahertz(5)), 60.0);
+    QCOMPARE(line.evaluateAt(megahertz(20)), 60.0);
+    QCOMPARE(line.evaluateAt(megahertz(30)), 60.0);
 }
 
 void LimitsTest::linearInterpolationIsLinear()
@@ -111,6 +114,13 @@ void LimitsTest::catalogueIsSelfConsistent()
         QVERIFY2(!line.standard.empty(), line.name.c_str());
         QVERIFY(line.builtIn);
     }
+
+    const auto conducted = builtInLimitLine("CISPR 32 Class B conducted (QP)");
+    QVERIFY(conducted.has_value());
+    QCOMPARE(conducted->evaluateAt(kilohertz(150)), 66.0);
+    QCOMPARE(conducted->evaluateAt(megahertz(1)), 56.0);
+    QCOMPARE(conducted->evaluateAt(megahertz(10)), 60.0);
+    QCOMPARE(conducted->unit, AmplitudeUnit::dBuV);
 
     const auto classB = builtInLimitLine("CISPR 32 Class B radiated 10 m (QP)");
     QVERIFY(classB.has_value());
@@ -173,8 +183,7 @@ void LimitsTest::worstCasePerBand()
     QVERIFY(worst.valid);
     QCOMPARE(worst.result.marginDb, -5.0);
 
-    const auto lowBand =
-        worstCaseInBand(margins, FrequencyRange{megahertz(30), megahertz(300)});
+    const auto lowBand = worstCaseInBand(margins, FrequencyRange{megahertz(30), megahertz(300)});
     QVERIFY(lowBand.valid);
     QCOMPARE(lowBand.result.marginDb, 1.0);
 }

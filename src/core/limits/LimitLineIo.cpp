@@ -1,7 +1,7 @@
-#include "session/JsonConversions.hpp"
+#include "session/JsonConversions.h"
 
-#include <peakemi/core/AtomicFileWriter.hpp>
-#include <peakemi/core/LimitLineIo.hpp>
+#include <peakemi/core/AtomicFileWriter.h>
+#include <peakemi/core/LimitLineIo.h>
 
 #include <QFileInfo>
 
@@ -173,10 +173,9 @@ Result<LimitLine> fromCsvText(std::string_view text)
         if (row.size() > 2) {
             interpolation = interpolationFromKey(row[2]).value_or(interpolation);
         }
-        line.points.push_back(
-            LimitPoint{.frequency = hertz(static_cast<std::int64_t>(*frequency)),
-                       .amplitude = *amplitude,
-                       .interpolationToNext = interpolation});
+        line.points.push_back(LimitPoint{.frequency = hertz(static_cast<std::int64_t>(*frequency)),
+                                         .amplitude = *amplitude,
+                                         .interpolationToNext = interpolation});
     }
 
     line.sortPoints();
@@ -288,7 +287,8 @@ Result<CorrectionTable> load(const QString& path)
 
 Status save(const CorrectionTable& table, const QString& path)
 {
-    return writeFileAtomically(path, hasSuffix(path, "json") ? toJsonText(table) : toCsvText(table));
+    return writeFileAtomically(path,
+                               hasSuffix(path, "json") ? toJsonText(table) : toCsvText(table));
 }
 
 } // namespace correction_io

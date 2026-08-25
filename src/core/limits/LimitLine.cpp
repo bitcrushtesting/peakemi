@@ -1,4 +1,4 @@
-#include <peakemi/core/LimitLine.hpp>
+#include <peakemi/core/LimitLine.h>
 
 #include <algorithm>
 #include <array>
@@ -27,8 +27,8 @@ constexpr std::array<std::pair<EquipmentClass, std::string_view>, 3> EquipmentCl
 }};
 
 template<class Enum, std::size_t N>
-[[nodiscard]] std::optional<Enum> lookup(const std::array<std::pair<Enum, std::string_view>, N>& table,
-                                         std::string_view key)
+[[nodiscard]] std::optional<Enum>
+lookup(const std::array<std::pair<Enum, std::string_view>, N>& table, std::string_view key)
 {
     for (const auto& [value, name] : table) {
         if (name == key) {
@@ -63,8 +63,8 @@ template<class Enum, std::size_t N>
                 return lower.amplitude;
             }
             const double fraction =
-                (std::log10(static_cast<double>(frequency.value())) - std::log10(lowerFrequency))
-                / span;
+                (std::log10(static_cast<double>(frequency.value())) - std::log10(lowerFrequency)) /
+                span;
             return lower.amplitude + fraction * (upper.amplitude - lower.amplitude);
         }
     }
@@ -83,8 +83,8 @@ FrequencyRange LimitLine::coverage() const
 
 bool LimitLine::covers(Hertz frequency) const
 {
-    return !points.empty() && frequency >= points.front().frequency
-           && frequency <= points.back().frequency;
+    return !points.empty() && frequency >= points.front().frequency &&
+           frequency <= points.back().frequency;
 }
 
 double LimitLine::evaluateAt(Hertz frequency) const

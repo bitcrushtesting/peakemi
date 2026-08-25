@@ -1,6 +1,6 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/hal/Scpi.hpp>
-#include <peakemi/hal/SerialScpiTransport.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/hal/Scpi.h>
+#include <peakemi/hal/SerialScpiTransport.h>
 
 #include <QElapsedTimer>
 #include <QSerialPort>
@@ -17,8 +17,7 @@ constexpr int WaitSliceMs = 25;
 
 SerialScpiTransport::SerialScpiTransport(TransportDescriptor descriptor)
     : m_descriptor{std::move(descriptor)}
-{
-}
+{}
 
 SerialScpiTransport::~SerialScpiTransport()
 {
@@ -98,8 +97,8 @@ Status SerialScpiTransport::pump(std::chrono::milliseconds timeout,
         }
         if (elapsed.elapsed() >= timeout.count()) {
             return fail(ErrorCode::Timeout,
-                        "no response from " + m_descriptor.displayName() + " within "
-                            + std::to_string(timeout.count()) + " ms");
+                        "no response from " + m_descriptor.displayName() + " within " +
+                            std::to_string(timeout.count()) + " ms");
         }
         if (m_port->waitForReadyRead(WaitSliceMs)) {
             m_buffer.append(m_port->readAll());
@@ -115,8 +114,8 @@ Result<std::string> SerialScpiTransport::read(std::chrono::milliseconds timeout,
         return fail(ErrorCode::NotConnected, m_descriptor.displayName());
     }
     const QByteArray terminator = QByteArray::fromStdString(m_descriptor.terminator);
-    if (auto status = pump(timeout, cancel, [&] { return m_buffer.contains(terminator); });
-        !status) {
+    if (auto status = pump(timeout, cancel, [&] { return m_buffer.contains(terminator); }); !status)
+    {
         return std::unexpected(status.error());
     }
     const auto end = m_buffer.indexOf(terminator);
@@ -126,9 +125,8 @@ Result<std::string> SerialScpiTransport::read(std::chrono::milliseconds timeout,
     return std::string{line.constData(), static_cast<std::size_t>(line.size())};
 }
 
-Result<std::vector<std::byte>> SerialScpiTransport::readBinaryBlock(
-    std::chrono::milliseconds timeout,
-    const CancelToken& cancel)
+Result<std::vector<std::byte>>
+SerialScpiTransport::readBinaryBlock(std::chrono::milliseconds timeout, const CancelToken& cancel)
 {
     if (!isOpen()) {
         return fail(ErrorCode::NotConnected, m_descriptor.displayName());

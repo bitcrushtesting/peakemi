@@ -1,0 +1,7 @@
+# name: RG-223 5 m cable loss
+# kind: cable-loss
+frequency_hz,value_db
+30000000,0.6
+100000000,1.1
+300000000,1.9
+1000000000,3.4

@@ -1,8 +1,8 @@
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/core/MeasurementEngine.hpp>
-#include <peakemi/core/Version.hpp>
-#include <peakemi/drivers/SimulatedDriver.hpp>
-#include <peakemi/ui/MainWindow.hpp>
+#include <peakemi/core/Logging.h>
+#include <peakemi/core/MeasurementEngine.h>
+#include <peakemi/core/Version.h>
+#include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/ui/MainWindow.h>
 
 #include <QApplication>
 #include <QCommandLineOption>
@@ -33,8 +33,9 @@ int main(int argc, char* argv[])
         QCoreApplication::translate("main", "EMI pre-compliance measurement suite"));
     parser.addHelpOption();
     parser.addVersionOption();
+    // Not "-v": that short form belongs to --version.
     const QCommandLineOption verboseOption{
-        {QStringLiteral("v"), QStringLiteral("verbose")},
+        QStringLiteral("verbose"),
         QCoreApplication::translate("main", "Log the full SCPI transcript.")};
     parser.addOption(verboseOption);
     parser.addPositionalArgument(
@@ -45,8 +46,7 @@ int main(int argc, char* argv[])
 
     // Logging first, so start-up problems land in the file too (FR-APP-1).
     const auto logDirectory =
-        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
-        + QStringLiteral("/logs");
+        QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + QStringLiteral("/logs");
     peakemi::installRotatingFileLogger(logDirectory);
     QLoggingCategory::setFilterRules(parser.isSet(verboseOption)
                                          ? QStringLiteral("peakemi.*.debug=true")

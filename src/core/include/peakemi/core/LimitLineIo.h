@@ -1,8 +1,8 @@
 #pragma once
 
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/Error.hpp>
-#include <peakemi/core/LimitLine.hpp>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/Error.h>
+#include <peakemi/core/LimitLine.h>
 
 #include <QString>
 

@@ -1,0 +1,19 @@
+# PeakEmi limit line, CSV format.
+#
+# Metadata lives in "# key: value" comments, the data rows are
+# frequency_hz,amplitude[,interpolation] and the header row is optional.
+# interpolation is one of: log-frequency (CISPR convention, the default),
+# linear, or step (hold the value until the next breakpoint).
+#
+# name: In-house radiated target 3 m
+# standard: Internal engineering target, 6 dB below CISPR 32 class B
+# note: Used for design reviews, not for compliance statements.
+# kind: radiated
+# class: B
+# detector: quasi-peak
+# unit: dBuV/m
+# distance_m: 3
+frequency_hz,amplitude,interpolation
+30000000,34.0,step
+230000000,41.0,step
+1000000000,41.0,step

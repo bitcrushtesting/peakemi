@@ -39,7 +39,8 @@ WarningsAsErrors: >
   concurrency-*,
   performance-*
 
-HeaderFilterRegex: '.*/src/.*\.(h|hpp)$'
+HeaderFilterRegex: '.*/src/.*\.h$'
+
 FormatStyle: file
 
 CheckOptions:

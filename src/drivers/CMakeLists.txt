@@ -4,8 +4,8 @@ peakemi_add_module(drivers
         scpi/ScpiAnalyzerDriver.cpp
         simulated/SimulatedDriver.cpp
     HEADERS
-        include/peakemi/drivers/ScpiAnalyzerDriver.hpp
-        include/peakemi/drivers/SimulatedDriver.hpp
+        include/peakemi/drivers/ScpiAnalyzerDriver.h
+        include/peakemi/drivers/SimulatedDriver.h
     PUBLIC
         peakemi::core
         peakemi::hal

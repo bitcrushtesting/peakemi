@@ -1,9 +1,9 @@
-#include <peakemi/core/CancelToken.hpp>
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/hal/Discovery.hpp>
-#include <peakemi/hal/Scpi.hpp>
-#include <peakemi/hal/SerialScpiTransport.hpp>
-#include <peakemi/hal/TcpScpiTransport.hpp>
+#include <peakemi/core/CancelToken.h>
+#include <peakemi/core/Logging.h>
+#include <peakemi/hal/Discovery.h>
+#include <peakemi/hal/Scpi.h>
+#include <peakemi/hal/SerialScpiTransport.h>
+#include <peakemi/hal/TcpScpiTransport.h>
 
 #include <QHostAddress>
 #include <QNetworkInterface>
@@ -33,8 +33,9 @@ QStringList LanDiscoveryWorker::localSubnetPrefixes()
     QStringList prefixes;
     for (const auto& interface : QNetworkInterface::allInterfaces()) {
         const auto flags = interface.flags();
-        if (!flags.testFlag(QNetworkInterface::IsUp)
-            || flags.testFlag(QNetworkInterface::IsLoopBack)) {
+        if (!flags.testFlag(QNetworkInterface::IsUp) ||
+            flags.testFlag(QNetworkInterface::IsLoopBack))
+        {
             continue;
         }
         for (const auto& entry : interface.addressEntries()) {
@@ -146,9 +147,8 @@ QList<DiscoveredInstrument> enumerateSerialPorts()
         if (!info.manufacturer().isEmpty()) {
             description += QStringLiteral(" (") + info.manufacturer() + QLatin1Char(')');
         }
-        ports.append(DiscoveredInstrument{.descriptor = descriptor,
-                                          .identity = {},
-                                          .description = description});
+        ports.append(DiscoveredInstrument{
+            .descriptor = descriptor, .identity = {}, .description = description});
     }
     return ports;
 }
@@ -169,8 +169,8 @@ Result<InstrumentId> identifyEndpoint(const TransportDescriptor& descriptor,
         case TransportKind::Visa:
         case TransportKind::Simulated:
             return fail(ErrorCode::NotImplemented,
-                        std::string{transportKindKey(descriptor.kind)}
-                            + " endpoints cannot be probed yet");
+                        std::string{transportKindKey(descriptor.kind)} +
+                            " endpoints cannot be probed yet");
     }
 
     if (auto status = transport->open(); !status) {

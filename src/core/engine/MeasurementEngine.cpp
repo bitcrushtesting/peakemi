@@ -1,8 +1,8 @@
-#include <peakemi/core/CisprBands.hpp>
-#include <peakemi/core/CorrectionTable.hpp>
-#include <peakemi/core/Logging.hpp>
-#include <peakemi/core/MeasurementEngine.hpp>
-#include <peakemi/core/SessionSerializer.hpp>
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/core/CorrectionTable.h>
+#include <peakemi/core/Logging.h>
+#include <peakemi/core/MeasurementEngine.h>
+#include <peakemi/core/SessionSerializer.h>
 
 #include <QElapsedTimer>
 #include <QMetaType>
@@ -30,11 +30,11 @@ namespace {
         for (int i = 0; i < segment.size(); ++i) {
             const Hertz frequency = segment.axis.frequencyAt(i);
             // Segments share their edge frequency; keep the higher reading.
-            if (!stitched.axis.explicitPoints.empty()
-                && stitched.axis.explicitPoints.back() == frequency) {
-                stitched.amplitudes.back() =
-                    std::max(stitched.amplitudes.back(),
-                             segment.amplitudes[static_cast<std::size_t>(i)]);
+            if (!stitched.axis.explicitPoints.empty() &&
+                stitched.axis.explicitPoints.back() == frequency)
+            {
+                stitched.amplitudes.back() = std::max(
+                    stitched.amplitudes.back(), segment.amplitudes[static_cast<std::size_t>(i)]);
                 continue;
             }
             stitched.axis.explicitPoints.push_back(frequency);
@@ -155,9 +155,8 @@ bool MeasurementEngine::waitWhilePaused()
     emitLog(tr("Run paused."));
     {
         std::unique_lock<std::mutex> lock{m_pauseMutex};
-        m_pauseCondition.wait(lock, [this] {
-            return !m_pauseRequested.load() || m_abortRequested.load();
-        });
+        m_pauseCondition.wait(
+            lock, [this] { return !m_pauseRequested.load() || m_abortRequested.load(); });
     }
     if (m_abortRequested.load()) {
         return false;
@@ -267,9 +266,10 @@ Result<MeasurementPoint> MeasurementEngine::verifyPeak(const PeakCandidate& cand
     point.vbw = params.vbw;
     point.dwell = m_config.dwellTime;
     point.corrections = applied;
-    point.limitName = margin.limitIndex >= 0
-                          ? m_evaluator.limitLines()[static_cast<std::size_t>(margin.limitIndex)].name
-                          : std::string{};
+    point.limitName =
+        margin.limitIndex >= 0
+            ? m_evaluator.limitLines()[static_cast<std::size_t>(margin.limitIndex)].name
+            : std::string{};
     point.verdict = margin.verdict;
     point.measuredAt = std::chrono::system_clock::now();
     point.pass = pass;
@@ -322,7 +322,9 @@ void MeasurementEngine::start()
     m_evaluator = LimitEvaluator{m_config.limits, m_config.marginalThresholdDb};
 
     Session session = Session::createNew(m_meta.applicationVersion);
-    const std::string runId = session.meta.runId;
+    // A run id supplied by the caller wins: the UI derives the autosave path
+    // from it, and every export has to name the same run (FR-DAT-6).
+    const std::string runId = m_meta.runId.empty() ? session.meta.runId : m_meta.runId;
     session.meta = m_meta;
     session.meta.runId = runId;
     session.meta.createdAt = std::chrono::system_clock::now();
@@ -360,7 +362,8 @@ void MeasurementEngine::start()
         peakSettings.marginThresholdDb = m_config.peaks.marginThresholdDb;
         const auto candidates = detectPeaks(corrected, m_evaluator, peakSettings);
         emit peaksFlagged(candidates);
-        emitLog(tr("Phase 1 complete: %1 peak(s) flagged for verification.").arg(candidates.size()));
+        emitLog(
+            tr("Phase 1 complete: %1 peak(s) flagged for verification.").arg(candidates.size()));
 
         if (candidates.empty()) {
             continue;
@@ -392,12 +395,11 @@ void MeasurementEngine::start()
             }
 
             // Multi-pass keeps the worst case per frequency (FR-RUN-8).
-            const auto existing =
-                std::find_if(session.results.begin(),
-                             session.results.end(),
-                             [&](const MeasurementPoint& stored) {
-                                 return stored.frequency == point->frequency;
-                             });
+            const auto existing = std::find_if(session.results.begin(),
+                                               session.results.end(),
+                                               [&](const MeasurementPoint& stored) {
+                                                   return stored.frequency == point->frequency;
+                                               });
             if (existing != session.results.end()) {
                 if (point->correctedAmplitude > existing->correctedAmplitude) {
                     *existing = *point;
@@ -410,13 +412,12 @@ void MeasurementEngine::start()
             emitLog(tr("%1 MHz: %2 dB margin (%3)")
                         .arg(toMegahertz(point->frequency), 0, 'f', 4)
                         .arg(point->marginDb, 0, 'f', 1)
-                        .arg(QString::fromUtf8(verdictKey(point->verdict).data(),
-                                               static_cast<qsizetype>(
-                                                   verdictKey(point->verdict).size()))));
+                        .arg(QString::fromUtf8(
+                            verdictKey(point->verdict).data(),
+                            static_cast<qsizetype>(verdictKey(point->verdict).size()))));
 
             const qint64 elapsed = timer.elapsed();
-            const qint64 remaining =
-                i + 1 > 0 ? (elapsed / (i + 1)) * (total - i - 1) : -1;
+            const qint64 remaining = i + 1 > 0 ? (elapsed / (i + 1)) * (total - i - 1) : -1;
             emit progress(i + 1, total, remaining);
 
             // Every Phase 2 point is a crash-safe checkpoint (FR-APP-4).

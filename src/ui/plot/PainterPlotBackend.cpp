@@ -1,4 +1,4 @@
-#include <peakemi/ui/PainterPlotBackend.hpp>
+#include <peakemi/ui/PainterPlotBackend.h>
 
 #include <QFontMetricsF>
 #include <QKeyEvent>
@@ -72,9 +72,10 @@ PainterPlotBackend::~PainterPlotBackend() = default;
 
 void PainterPlotBackend::setSeries(const PlotSeries& series)
 {
-    const auto existing = std::find_if(m_series.begin(), m_series.end(), [&](const PlotSeries& stored) {
-        return stored.id == series.id;
-    });
+    const auto existing =
+        std::find_if(m_series.begin(), m_series.end(), [&](const PlotSeries& stored) {
+            return stored.id == series.id;
+        });
     if (existing != m_series.end()) {
         *existing = series;
     } else {
@@ -242,8 +243,7 @@ double PainterPlotBackend::fromX(const Layout& layout, double x) const
 double PainterPlotBackend::fromY(const Layout& layout, double y) const
 {
     const double fraction = (layout.plotArea.bottom() - y) / layout.plotArea.height();
-    return layout.amplitudeMinimum
-           + fraction * (layout.amplitudeMaximum - layout.amplitudeMinimum);
+    return layout.amplitudeMinimum + fraction * (layout.amplitudeMaximum - layout.amplitudeMinimum);
 }
 
 void PainterPlotBackend::drawGrid(QPainter& painter, const Layout& layout) const
@@ -297,15 +297,15 @@ void PainterPlotBackend::drawGrid(QPainter& painter, const Layout& layout) const
     }
 
     // Amplitude axis.
-    const double amplitudeStep =
-        niceStep(layout.amplitudeMaximum - layout.amplitudeMinimum, 8);
-    const double firstAmplitude = std::ceil(layout.amplitudeMinimum / amplitudeStep) * amplitudeStep;
+    const double amplitudeStep = niceStep(layout.amplitudeMaximum - layout.amplitudeMinimum, 8);
+    const double firstAmplitude =
+        std::ceil(layout.amplitudeMinimum / amplitudeStep) * amplitudeStep;
     for (double amplitude = firstAmplitude; amplitude <= layout.amplitudeMaximum;
-         amplitude += amplitudeStep) {
+         amplitude += amplitudeStep)
+    {
         const double y = toY(layout, amplitude);
         painter.setPen(QPen{gridColour, 1.0, Qt::DotLine});
-        painter.drawLine(QPointF{layout.plotArea.left(), y},
-                         QPointF{layout.plotArea.right(), y});
+        painter.drawLine(QPointF{layout.plotArea.left(), y}, QPointF{layout.plotArea.right(), y});
         painter.setPen(textColour);
         const auto label = QString::number(amplitude, 'f', 0);
         painter.drawText(QPointF{layout.plotArea.left() - metrics.horizontalAdvance(label) - 6.0,
@@ -419,14 +419,13 @@ void PainterPlotBackend::drawMarkers(QPainter& painter, const Layout& layout) co
         }
         painter.setPen(QPen{marker.colour, marker.selected ? 2.0 : 1.0});
         painter.setBrush(marker.selected ? QBrush{marker.colour} : QBrush{Qt::NoBrush});
-        const QPolygonF flag{{position,
-                              position + QPointF{-5.0, -9.0},
-                              position + QPointF{5.0, -9.0}}};
+        const QPolygonF flag{
+            {position, position + QPointF{-5.0, -9.0}, position + QPointF{5.0, -9.0}}};
         painter.drawPolygon(flag);
         if (!marker.label.isEmpty()) {
             painter.setBrush(Qt::NoBrush);
-            painter.drawText(position + QPointF{-metrics.horizontalAdvance(marker.label) / 2.0,
-                                                -12.0},
+            painter.drawText(position +
+                                 QPointF{-metrics.horizontalAdvance(marker.label) / 2.0, -12.0},
                              marker.label);
         }
     }
@@ -601,9 +600,9 @@ void PainterPlotBackend::mouseMoveEvent(QMouseEvent* event)
     if (m_dragOrigin) {
         const double deltaPixels = event->position().x() - m_dragOrigin->x();
         if (m_logarithmic && m_dragStartFrequency > 0.0) {
-            const double decades = (std::log10(m_dragStopFrequency)
-                                    - std::log10(m_dragStartFrequency))
-                                   * deltaPixels / layout.plotArea.width();
+            const double decades =
+                (std::log10(m_dragStopFrequency) - std::log10(m_dragStartFrequency)) * deltaPixels /
+                layout.plotArea.width();
             m_frequencyStart = std::pow(10.0, std::log10(m_dragStartFrequency) - decades);
             m_frequencyStop = std::pow(10.0, std::log10(m_dragStopFrequency) - decades);
         } else {

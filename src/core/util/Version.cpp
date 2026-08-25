@@ -1,4 +1,4 @@
-#include <peakemi/core/Version.hpp>
+#include <peakemi/core/Version.h>
 
 #include <string>
 

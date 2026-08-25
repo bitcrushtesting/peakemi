@@ -1,9 +1,9 @@
 #pragma once
 
-#include <peakemi/core/AbstractAnalyzerDriver.hpp>
-#include <peakemi/core/MeasurementEngine.hpp>
-#include <peakemi/core/RunConfiguration.hpp>
-#include <peakemi/core/Session.hpp>
+#include <peakemi/core/AbstractAnalyzerDriver.h>
+#include <peakemi/core/MeasurementEngine.h>
+#include <peakemi/core/RunConfiguration.h>
+#include <peakemi/core/Session.h>
 
 #include <QObject>
 #include <QString>
@@ -30,7 +30,9 @@ public:
 
     [[nodiscard]] bool isConnected() const;
     [[nodiscard]] bool isRunning() const;
+
     [[nodiscard]] InstrumentId instrumentId() const { return m_instrument; }
+
     [[nodiscard]] Capabilities capabilities() const;
 
     void setConfiguration(RunConfiguration config);

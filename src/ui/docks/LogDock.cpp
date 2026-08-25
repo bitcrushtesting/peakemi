@@ -1,4 +1,4 @@
-#include <peakemi/ui/LogDock.hpp>
+#include <peakemi/ui/LogDock.h>
 
 #include <QDateTime>
 #include <QLineEdit>

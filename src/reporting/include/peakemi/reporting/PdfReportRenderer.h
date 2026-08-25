@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/IReportRenderer.hpp>
+#include <peakemi/core/IReportRenderer.h>
 
 #include <QImage>
 

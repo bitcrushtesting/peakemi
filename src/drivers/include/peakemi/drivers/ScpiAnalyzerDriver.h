@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/AbstractAnalyzerDriver.hpp>
+#include <peakemi/core/AbstractAnalyzerDriver.h>
 
 #include <atomic>
 #include <string>
@@ -58,6 +58,7 @@ public:
     ~ScpiAnalyzerDriver() override;
 
     [[nodiscard]] DriverInfo info() const override { return m_info; }
+
     [[nodiscard]] Capabilities capabilities() const override { return m_capabilities; }
 
     [[nodiscard]] Status open(TransportPtr transport) override;
@@ -75,8 +76,7 @@ public:
 protected:
     [[nodiscard]] Status send(const std::string& command);
     [[nodiscard]] Status sendValue(const std::string& command, const std::string& value);
-    [[nodiscard]] Result<std::string> query(const std::string& command,
-                                            const CancelToken& cancel);
+    [[nodiscard]] Result<std::string> query(const std::string& command, const CancelToken& cancel);
     [[nodiscard]] std::string detectorKeyword(Detector detector) const;
 
     ScpiDialect m_dialect;

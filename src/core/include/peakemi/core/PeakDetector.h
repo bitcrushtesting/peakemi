@@ -1,7 +1,7 @@
 #pragma once
 
-#include <peakemi/core/LimitEvaluator.hpp>
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/LimitEvaluator.h>
+#include <peakemi/core/Trace.h>
 
 #include <vector>
 

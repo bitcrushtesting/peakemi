@@ -1,6 +1,6 @@
-#include <peakemi/core/CisprBands.hpp>
-#include <peakemi/core/Trace.hpp>
-#include <peakemi/core/Units.hpp>
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/core/Trace.h>
+#include <peakemi/core/Units.h>
 
 #include <QTest>
 
@@ -73,12 +73,14 @@ void UnitsTest::fieldStrengthDoesNotConvert()
 
 void UnitsTest::enumKeysRoundTrip()
 {
-    for (const auto detector : {Detector::Peak, Detector::QuasiPeak, Detector::Average,
-                                Detector::Rms, Detector::Sample}) {
+    for (const auto detector :
+         {Detector::Peak, Detector::QuasiPeak, Detector::Average, Detector::Rms, Detector::Sample})
+    {
         QCOMPARE(detectorFromKey(detectorKey(detector)).value(), detector);
     }
-    for (const auto unit : {AmplitudeUnit::dBm, AmplitudeUnit::dBuV, AmplitudeUnit::dBuV_per_m,
-                            AmplitudeUnit::dBuA}) {
+    for (const auto unit :
+         {AmplitudeUnit::dBm, AmplitudeUnit::dBuV, AmplitudeUnit::dBuV_per_m, AmplitudeUnit::dBuA})
+    {
         QCOMPARE(amplitudeUnitFromKey(amplitudeUnitKey(unit)).value(), unit);
     }
     for (const auto verdict : {Verdict::Unknown, Verdict::Pass, Verdict::Marginal, Verdict::Fail}) {

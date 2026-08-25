@@ -1,6 +1,6 @@
 #pragma once
 
-#include <peakemi/core/ITransport.hpp>
+#include <peakemi/core/ITransport.h>
 
 #include <QByteArray>
 #include <QString>
@@ -29,9 +29,8 @@ public:
     [[nodiscard]] Status write(std::string_view command) override;
     [[nodiscard]] Result<std::string> read(std::chrono::milliseconds timeout,
                                            const CancelToken& cancel) override;
-    [[nodiscard]] Result<std::vector<std::byte>> readBinaryBlock(
-        std::chrono::milliseconds timeout,
-        const CancelToken& cancel) override;
+    [[nodiscard]] Result<std::vector<std::byte>>
+    readBinaryBlock(std::chrono::milliseconds timeout, const CancelToken& cancel) override;
     void clear() override;
 
     [[nodiscard]] TransportDescriptor descriptor() const override { return m_descriptor; }
@@ -40,9 +39,8 @@ private:
     /// Pump the socket until @p predicate is satisfied, the timeout expires or
     /// the token is cancelled.
     template<class Predicate>
-    [[nodiscard]] Status pump(std::chrono::milliseconds timeout,
-                              const CancelToken& cancel,
-                              Predicate predicate);
+    [[nodiscard]] Status
+    pump(std::chrono::milliseconds timeout, const CancelToken& cancel, Predicate predicate);
 
     TransportDescriptor m_descriptor;
     std::unique_ptr<QTcpSocket> m_socket;

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <peakemi/core/Capabilities.hpp>
-#include <peakemi/core/ITransport.hpp>
-#include <peakemi/core/InstrumentId.hpp>
-#include <peakemi/core/Trace.hpp>
+#include <peakemi/core/Capabilities.h>
+#include <peakemi/core/ITransport.h>
+#include <peakemi/core/InstrumentId.h>
+#include <peakemi/core/Trace.h>
 
 #include <memory>
 #include <string>
@@ -14,11 +14,11 @@ namespace peakemi {
 /// Static description of a driver, shown in the UI and used for matching.
 struct DriverInfo
 {
-    std::string id;      ///< stable identifier, e.g. "siglent.ssa3000x"
-    std::string name;    ///< human readable
+    std::string id;   ///< stable identifier, e.g. "siglent.ssa3000x"
+    std::string name; ///< human readable
     std::string vendor;
     std::string version;
-    std::string origin;  ///< "built-in" or a plugin path
+    std::string origin; ///< "built-in" or a plugin path
     std::vector<TransportKind> supportedTransports;
 };
 

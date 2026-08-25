@@ -1,0 +1,18 @@
+# PeakEmi correction table, CSV format.
+#
+# kind is one of: antenna-factor, cable-loss, lisn-factor, attenuator,
+# amplifier-gain, other. Losses and transducer factors are added to the
+# instrument reading, gains are subtracted from it. Values are interpolated
+# linearly over log frequency and clamped outside the tabulated range.
+#
+# name: Bicolog antenna factor
+# kind: antenna-factor
+frequency_hz,value_db
+30000000,17.6
+50000000,13.2
+100000000,12.9
+200000000,15.4
+300000000,17.8
+500000000,20.1
+700000000,22.3
+1000000000,24.6
