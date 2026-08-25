@@ -30,6 +30,7 @@
 #include <QTabBar>
 #include <QTextStream>
 
+#include <exception>
 #include <functional>
 
 namespace {
@@ -80,7 +81,9 @@ peakemi::RunConfiguration demoConfiguration()
     config.peaks.maximumCount = 8;
     config.verificationDetector = peakemi::Detector::QuasiPeak;
     config.dwellTime = std::chrono::milliseconds{1000};
-    config.limits = {*peakemi::builtInLimitLine("CISPR 32 Class B radiated 10 m (QP)")};
+    if (const auto limit = peakemi::builtInLimitLine("CISPR 32 Class B radiated 10 m (QP)")) {
+        config.limits = {*limit};
+    }
 
     peakemi::CorrectionTable antenna;
     antenna.name = "Biconilog antenna factor";
@@ -103,7 +106,7 @@ peakemi::RunConfiguration demoConfiguration()
 } // namespace
 
 int main(int argc, char* argv[])
-{
+try {
     QApplication application{argc, argv};
 
     // A throwaway settings scope, so the screenshots always show the default
@@ -179,4 +182,7 @@ int main(int argc, char* argv[])
     ok = save(logDock->grab(), directory + QStringLiteral("/log-console.png")) && ok;
 
     return ok ? 0 : 1;
+} catch (const std::exception& error) {
+    out() << "screenshot generation failed: " << error.what() << Qt::endl;
+    return 1;
 }

@@ -4,16 +4,18 @@
 #include <peakemi/core/Error.h>
 #include <peakemi/core/InstrumentId.h>
 
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace peakemi::hal {
 
 /// Score a driver claims for an identified instrument. Higher wins; zero means
 /// "not mine" (FR-DIS-4).
-enum class MatchScore : int
+enum class MatchScore : std::uint8_t
 {
     None = 0,
     Vendor = 30,      ///< right manufacturer, unknown model
@@ -69,7 +71,7 @@ private:
 /// Matcher for the common case: one manufacturer, a list of model patterns.
 /// Patterns are matched case-insensitively; a `*` suffix makes it a family
 /// pattern scoring lower than an exact model name.
-[[nodiscard]] DriverRegistry::Matcher makeMatcher(std::string manufacturer,
+[[nodiscard]] DriverRegistry::Matcher makeMatcher(std::string_view manufacturer,
                                                   std::vector<std::string> modelPatterns);
 
 } // namespace peakemi::hal

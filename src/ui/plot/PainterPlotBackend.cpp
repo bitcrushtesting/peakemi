@@ -339,7 +339,9 @@ void PainterPlotBackend::drawSeries(QPainter& painter,
 
     // One vertical min/max bar per pixel column keeps redraw cost proportional
     // to the widget width rather than to the trace length (NFR-PERF-2).
-    if (series.points.size() > columns * 2 && series.style != PlotStyle::Points) {
+    if (series.points.size() > static_cast<qsizetype>(columns) * 2 &&
+        series.style != PlotStyle::Points)
+    {
         std::vector<double> minima(static_cast<std::size_t>(columns),
                                    std::numeric_limits<double>::max());
         std::vector<double> maxima(static_cast<std::size_t>(columns),
