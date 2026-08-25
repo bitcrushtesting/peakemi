@@ -4,7 +4,11 @@
 #include <peakemi/core/Time.h>
 #include <peakemi/reporting/CsvExporter.h>
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <iomanip>
+#include <locale>
 #include <sstream>
 
 namespace peakemi::reporting::csv {

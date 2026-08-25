@@ -7,6 +7,7 @@
 #include <peakemi/ui/ResultsDock.h>
 #include <peakemi/ui/RunConfigDock.h>
 
+#include <QApplication>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QLineEdit>

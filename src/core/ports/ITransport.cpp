@@ -1,6 +1,7 @@
 #include <peakemi/core/ITransport.h>
 
 #include <array>
+#include <optional>
 
 namespace peakemi {
 namespace {

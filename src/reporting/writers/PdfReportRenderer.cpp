@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 
 namespace peakemi::reporting {
 namespace {

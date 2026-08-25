@@ -21,6 +21,7 @@
 #include <QVBoxLayout>
 
 #include <algorithm>
+#include <cstddef>
 
 namespace peakemi::ui {
 namespace {

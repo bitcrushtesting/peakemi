@@ -5,6 +5,7 @@
 #include <QElapsedTimer>
 #include <QTcpSocket>
 
+#include <cstring>
 #include <utility>
 
 namespace peakemi::hal {

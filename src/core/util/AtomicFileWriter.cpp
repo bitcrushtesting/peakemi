@@ -5,6 +5,8 @@
 #include <QFileInfo>
 #include <QSaveFile>
 
+#include <cstddef>
+
 namespace peakemi {
 
 Status writeFileAtomically(const QString& path, std::string_view content)

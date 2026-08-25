@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <charconv>
 #include <cstring>
+#include <exception>
+#include <iomanip>
+#include <locale>
 #include <sstream>
 
 namespace peakemi::scpi {

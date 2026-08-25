@@ -1,6 +1,7 @@
 #include <peakemi/core/CisprBands.h>
 
 #include <array>
+#include <cstddef>
 
 namespace peakemi {
 namespace {

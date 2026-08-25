@@ -1,4 +1,5 @@
 #include "ScriptedTransport.h"
+#include "TestSupport.h"
 
 #include <peakemi/drivers/ScpiAnalyzerDriver.h>
 #include <peakemi/drivers/SimulatedDriver.h>
@@ -206,7 +207,8 @@ void DriversTest::scpiDriverParsesTheTrace()
     const CancelToken cancel;
     QVERIFY(driver->armAndTrigger(cancel).has_value());
     const auto trace = driver->fetchTrace(cancel);
-    QVERIFY2(trace.has_value(), trace.error().message().c_str());
+    const auto reason = test::errorText(trace);
+    QVERIFY2(trace.has_value(), reason.constData());
     QCOMPARE(trace->amplitudes, (std::vector<double>{10.0, 20.0, 30.0, 25.0}));
     QCOMPARE(trace->unit, AmplitudeUnit::dBuV);
     QCOMPARE(trace->source.model, std::string{"DSA815"});

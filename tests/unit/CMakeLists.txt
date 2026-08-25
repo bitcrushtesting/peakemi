@@ -37,7 +37,3 @@ peakemi_add_test(reporting
 peakemi_add_test(mainwindow
     SOURCES MainWindowTest.cpp
     LIBS    peakemi::ui)
-
-# Fixtures (scripted transport, recorded transcripts) are shared by the tests
-# that drive a real driver without hardware.
-target_include_directories(test_drivers PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../fixtures")

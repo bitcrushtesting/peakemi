@@ -1,6 +1,7 @@
 #include <peakemi/core/Error.h>
 
 #include <array>
+#include <cstddef>
 
 namespace peakemi {
 namespace {
