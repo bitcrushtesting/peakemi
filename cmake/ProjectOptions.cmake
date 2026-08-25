@@ -47,8 +47,22 @@ if(PEAKEMI_ENABLE_COVERAGE)
 endif()
 
 if(PEAKEMI_ENABLE_CLANG_TIDY)
-    find_program(PEAKEMI_CLANG_TIDY_EXE NAMES clang-tidy)
+    # Versioned names first: distributions ship an unversioned clang-tidy that
+    # can be older than the one that was installed alongside the compiler.
+    find_program(PEAKEMI_CLANG_TIDY_EXE
+        NAMES clang-tidy-20 clang-tidy-19 clang-tidy)
     if(PEAKEMI_CLANG_TIDY_EXE)
+        execute_process(COMMAND "${PEAKEMI_CLANG_TIDY_EXE}" --version
+            OUTPUT_VARIABLE PEAKEMI_CLANG_TIDY_VERSION
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REGEX MATCH "version ([0-9]+)" PEAKEMI_CLANG_TIDY_MAJOR
+            "${PEAKEMI_CLANG_TIDY_VERSION}")
+        if(CMAKE_MATCH_1 AND CMAKE_MATCH_1 LESS 19)
+            # clang-tidy 18 and older cannot parse libstdc++ <expected>.
+            message(WARNING
+                "clang-tidy ${CMAKE_MATCH_1} may fail to parse std::expected; "
+                "install clang-tidy 19 or newer.")
+        endif()
         # include() does not open a new scope: this lands in the including directory
         # scope (the top level) and is therefore inherited by every subdirectory.
         set(CMAKE_CXX_CLANG_TIDY "${PEAKEMI_CLANG_TIDY_EXE};--quiet")

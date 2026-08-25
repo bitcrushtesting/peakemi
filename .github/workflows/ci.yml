@@ -84,7 +84,9 @@ jobs:
 
       # clang 18 cannot parse libstdc++'s <expected> and reports every use of
       # std::expected as an unknown template, so the analyser needs a newer
-      # release than Ubuntu 24.04 ships.
+      # release than Ubuntu 24.04 ships. The versioned binaries are invoked
+      # directly: the runner image ships a real /usr/bin/clang-tidy, which
+      # update-alternatives will not replace.
       - name: Install tooling
         run: |
           sudo apt-get update
@@ -94,18 +96,15 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 20
           sudo apt-get install -y clang-tidy-20 clang-format-20
-          sudo update-alternatives --install /usr/bin/clang-format clang-format \
-            /usr/bin/clang-format-20 100
-          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy \
-            /usr/bin/clang-tidy-20 100
-          clang-tidy --version
+          clang-tidy-20 --version
+          clang-format-20 --version
 
       - name: Check formatting
         run: |
           # *.h.in holds CMake @VARIABLE@ placeholders, which clang-format
           # cannot parse; it is generated into a formatted header at build time.
           mapfile -t files < <(git ls-files '*.cpp' '*.h')
-          clang-format --dry-run --Werror "${files[@]}"
+          clang-format-20 --dry-run --Werror "${files[@]}"
 
       - name: Install Qt ${{ env.QT_VERSION }}
         uses: jurplel/install-qt-action@v4
@@ -120,6 +119,7 @@ jobs:
           CXX: clang++-20
         run: |
           cmake --preset ci -DPEAKEMI_ENABLE_CLANG_TIDY=ON \
+            -DPEAKEMI_CLANG_TIDY_EXE=/usr/bin/clang-tidy-20 \
             -DPEAKEMI_WARNINGS_AS_ERRORS=OFF -DPEAKEMI_BUILD_TOOLS=ON
 
       - name: Build with clang-tidy
