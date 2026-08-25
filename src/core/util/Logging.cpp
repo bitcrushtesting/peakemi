@@ -26,7 +26,7 @@ namespace {
 QtMessageHandler g_previousHandler = nullptr;
 QMutex g_logMutex;
 QString g_logPath;
-qint64 g_maximumBytes = 5 * 1024 * 1024;
+qint64 g_maximumBytes = 5LL * 1024 * 1024;
 int g_keptFiles = 3;
 
 [[nodiscard]] const char* levelName(QtMsgType type)
