@@ -428,7 +428,7 @@ peakemi/
 
 Each `src/<module>/` owns a `CMakeLists.txt` declaring one target; public headers live under
 `src/<module>/include/peakemi/<module>/` and are exposed with `target_include_directories(...
-PUBLIC)`. Includes are always angle-bracket, project-rooted: `#include <peakemi/core/Trace.hpp>`.
+PUBLIC)`. Includes are always angle-bracket, project-rooted: `#include <peakemi/core/Trace.h>`.
 
 ---
 

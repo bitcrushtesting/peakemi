@@ -1,10 +1,10 @@
 qt_add_executable(peakemi
     main.cpp)
 
+# peakemi::ui pulls in core, hal, drivers and reporting transitively.
 target_link_libraries(peakemi
     PRIVATE
         peakemi::ui
-        peakemi::core
         peakemi::options
         peakemi::warnings)
 
@@ -20,3 +20,14 @@ set_target_properties(peakemi PROPERTIES
 install(TARGETS peakemi
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION bin)
+
+# Freedesktop integration, also consumed by linuxdeploy when building the
+# AppImage in the release workflow.
+if(UNIX AND NOT APPLE)
+    install(FILES "${PROJECT_SOURCE_DIR}/LICENSE"
+        DESTINATION share/licenses/peakemi)
+    install(FILES "${PROJECT_SOURCE_DIR}/resources/peakemi.desktop"
+        DESTINATION share/applications)
+    install(FILES "${PROJECT_SOURCE_DIR}/resources/peakemi.png"
+        DESTINATION share/icons/hicolor/256x256/apps)
+endif()
