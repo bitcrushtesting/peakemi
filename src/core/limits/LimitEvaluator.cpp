@@ -1,6 +1,7 @@
 #include <peakemi/core/LimitEvaluator.h>
 
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <utility>
 

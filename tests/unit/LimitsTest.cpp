@@ -1,3 +1,5 @@
+#include "TestSupport.h"
+
 #include <peakemi/core/LimitCatalogue.h>
 #include <peakemi/core/LimitEvaluator.h>
 #include <peakemi/core/LimitLine.h>
@@ -193,7 +195,8 @@ void LimitsTest::csvRoundTrip()
     const auto original = makeLine();
     const auto text = limit_io::toCsvText(original);
     const auto parsed = limit_io::fromCsvText(text);
-    QVERIFY2(parsed.has_value(), parsed.error().message().c_str());
+    const auto reason = test::errorText(parsed);
+    QVERIFY2(parsed.has_value(), reason.constData());
     QCOMPARE(parsed->points.size(), original.points.size());
     QCOMPARE(parsed->unit, original.unit);
     QCOMPARE(parsed->evaluateAt(megahertz(1)), original.evaluateAt(megahertz(1)));

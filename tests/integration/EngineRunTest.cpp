@@ -1,3 +1,5 @@
+#include "TestSupport.h"
+
 #include <peakemi/core/CisprBands.h>
 #include <peakemi/core/LimitCatalogue.h>
 #include <peakemi/core/MeasurementEngine.h>
@@ -10,6 +12,7 @@
 #include <QTest>
 #include <QThread>
 
+#include <cmath>
 #include <memory>
 
 using namespace peakemi;
@@ -256,7 +259,8 @@ void EngineRunTest::autosaveWritesAfterEveryPoint()
 
     // Crash safety: the file on disk holds the results without an explicit save.
     const auto recovered = SessionSerializer::load(path);
-    QVERIFY2(recovered.has_value(), recovered.error().message().c_str());
+    const auto reason = test::errorText(recovered);
+    QVERIFY2(recovered.has_value(), reason.constData());
     QVERIFY(!recovered->results.empty());
     QVERIFY(!recovered->traces.empty());
     QCOMPARE(recovered->config.span, config.span);

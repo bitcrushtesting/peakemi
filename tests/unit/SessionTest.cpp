@@ -1,3 +1,5 @@
+#include "TestSupport.h"
+
 #include <peakemi/core/Capabilities.h>
 #include <peakemi/core/LimitCatalogue.h>
 #include <peakemi/core/RunConfiguration.h>
@@ -91,7 +93,8 @@ void SessionTest::jsonRoundTripPreservesEverything()
 {
     const auto original = makeSession();
     const auto restored = SessionSerializer::fromJson(SessionSerializer::toJson(original));
-    QVERIFY2(restored.has_value(), restored.error().message().c_str());
+    const auto reason = test::errorText(restored);
+    QVERIFY2(restored.has_value(), reason.constData());
 
     QCOMPARE(restored->meta.eutName, original.meta.eutName);
     QCOMPARE(restored->meta.runId, original.meta.runId);
@@ -336,3 +339,7 @@ void SessionTest::isoTimestampsRoundTrip()
 
 QTEST_APPLESS_MAIN(SessionTest)
 #include "SessionTest.moc"
+
+#include <cmath>
+#include <cstddef>
+#include <limits>

@@ -3,6 +3,7 @@
 #include <QTest>
 
 #include <cmath>
+#include <cstddef>
 
 using namespace peakemi;
 
