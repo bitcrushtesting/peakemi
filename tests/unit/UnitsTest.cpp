@@ -162,3 +162,6 @@ void UnitsTest::maxHoldRejectsMismatchedAxes()
 
 QTEST_APPLESS_MAIN(UnitsTest)
 #include "UnitsTest.moc"
+
+#include <cmath>
+#include <type_traits>

@@ -55,6 +55,8 @@ function(peakemi_add_test NAME)
     set_target_properties(${target} PROPERTIES AUTOMOC ON FOLDER "tests")
     target_link_libraries(${target}
         PRIVATE ${ARG_LIBS} Qt6::Test peakemi::options peakemi::warnings)
+    # Shared fixtures: the scripted transport and the QVERIFY2 helpers.
+    target_include_directories(${target} PRIVATE "${PROJECT_SOURCE_DIR}/tests/fixtures")
 
     add_test(NAME ${NAME} COMMAND ${target})
     set_tests_properties(${NAME} PROPERTIES

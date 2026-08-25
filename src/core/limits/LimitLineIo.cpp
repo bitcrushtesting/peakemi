@@ -5,6 +5,8 @@
 
 #include <QFileInfo>
 
+#include <cstddef>
+#include <exception>
 #include <map>
 #include <sstream>
 #include <stdexcept>
