@@ -22,7 +22,8 @@ namespace {
 /// Read a big-endian 32-bit word out of an encoded message.
 [[nodiscard]] std::uint32_t wordAt(const QByteArray& data, int index)
 {
-    return qFromBigEndian<std::uint32_t>(data.constData() + index * 4);
+    constexpr qsizetype WordSize = 4;
+    return qFromBigEndian<std::uint32_t>(data.constData() + index * WordSize);
 }
 
 /// A minimal VXI-11 instrument: portmapper on one socket, core channel on
@@ -91,7 +92,10 @@ private:
                 break;
             case vxi11::CoreProcedure::DeviceWrite: {
                 // The written payload is the last opaque field of the call.
-                vxi11::XdrReader reader{call.mid(10 * 4)};
+                // Skip the RPC header: ten 32-bit words before the arguments.
+                constexpr qsizetype HeaderWords = 10;
+                constexpr qsizetype WordSize = 4;
+                vxi11::XdrReader reader{call.mid(HeaderWords * WordSize)};
                 (void)reader.takeUnsigned(); // link
                 (void)reader.takeUnsigned(); // io timeout
                 (void)reader.takeUnsigned(); // lock timeout
