@@ -1,6 +1,7 @@
 peakemi_add_module(ui
     QT_AUTOMOC
     SOURCES
+        dialogs/ReportTemplateDialog.cpp
         docks/InstrumentDock.cpp
         docks/LogDock.cpp
         docks/ResultsDock.cpp
@@ -15,6 +16,7 @@ peakemi_add_module(ui
         include/peakemi/ui/LogDock.h
         include/peakemi/ui/MainWindow.h
         include/peakemi/ui/PainterPlotBackend.h
+        include/peakemi/ui/ReportTemplateDialog.h
         include/peakemi/ui/ResultsDock.h
         include/peakemi/ui/ResultsTableModel.h
         include/peakemi/ui/RunConfigDock.h
