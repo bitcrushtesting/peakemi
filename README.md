@@ -57,8 +57,9 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images
 * **Simulated analyzer** — ships with the app, needs no hardware, and produces a
   deterministic spectrum that fails CISPR 32 class B in a few places, so a new user can
   go from launch to a finished run and a PDF report in a minute.
-* **Instruments** — raw SCPI over TCP or serial, `*IDN?`-scored driver selection, bounded
-  and opt-in LAN sweep, serial port enumeration, and a raw SCPI console.
+* **Instruments** — raw SCPI over TCP, VXI-11, USBTMC and serial, `*IDN?`-scored driver
+  selection, bounded and opt-in LAN sweep, live USB hotplug detection, serial port
+  enumeration, an optional VISA path, and a raw SCPI console.
 * **Limits and corrections** — built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
   CSV/JSON import of custom limits and of antenna/cable/gain correction tables
   (see [`resources/`](resources) for the documented file formats).
@@ -66,8 +67,18 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images
   export of traces and results, and a PDF report carrying the mandatory pre-compliance
   disclaimer.
 
-Not yet implemented: USBTMC/VXI-11/VISA transports, USB hotplug discovery, and the
-embedded Python plugin bridge — see [tasklist.md](tasklist.md).
+Not yet implemented: the embedded Python plugin bridge and report templates —
+see [tasklist.md](tasklist.md).
+
+### Instrument buses
+
+| Bus | Build option | Notes |
+|---|---|---|
+| Raw SCPI over TCP | always | Ports 5025/5555, the default for LAN instruments |
+| VXI-11 | always | Finds its own port through the portmapper; use for instruments with no raw socket |
+| Serial | always | Configurable baud rate, framing and terminator |
+| USBTMC | `PEAKEMI_WITH_USBTMC=ON` | Needs libusb 1.0; instruments appear and disappear live |
+| VISA | `PEAKEMI_WITH_VISA=ON` | Resolved at run time; absent runtime simply removes the option |
 
 ## Building
 
@@ -95,7 +106,7 @@ The application binary lands in `build/<preset>/bin/`.
 | `PEAKEMI_BUILD_TESTS` | `ON` | Build the Qt Test suite |
 | `PEAKEMI_BUILD_TOOLS` | `OFF` | Build the developer tools (README screenshot generator) |
 | `PEAKEMI_WITH_PYTHON` | `OFF` | Embed CPython for Python driver plugins (pulls pybind11) |
-| `PEAKEMI_WITH_USBTMC` | `OFF` | Build the USBTMC transport (requires libusb-1.0) |
+| `PEAKEMI_WITH_USBTMC` | `OFF` | Build the USBTMC transport and USB hotplug discovery (needs libusb-1.0) |
 | `PEAKEMI_WITH_VISA` | `OFF` | Enable the optional VISA transport |
 | `PEAKEMI_WARNINGS_AS_ERRORS` | `OFF` | Promote compiler warnings to errors (CI turns this on) |
 | `PEAKEMI_ENABLE_CLANG_TIDY` | `OFF` | Run clang-tidy during the build |

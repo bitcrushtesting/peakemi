@@ -4,6 +4,9 @@
 #include <peakemi/hal/Scpi.h>
 #include <peakemi/hal/SerialScpiTransport.h>
 #include <peakemi/hal/TcpScpiTransport.h>
+#include <peakemi/hal/UsbTmcTransport.h>
+#include <peakemi/hal/VisaTransport.h>
+#include <peakemi/hal/Vxi11Transport.h>
 
 #include <QHostAddress>
 #include <QNetworkInterface>

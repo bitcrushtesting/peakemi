@@ -7,6 +7,9 @@
 #include <peakemi/hal/DriverRegistry.h>
 #include <peakemi/hal/SerialScpiTransport.h>
 #include <peakemi/hal/TcpScpiTransport.h>
+#include <peakemi/hal/UsbTmcTransport.h>
+#include <peakemi/hal/VisaTransport.h>
+#include <peakemi/hal/Vxi11Transport.h>
 #include <peakemi/reporting/CsvExporter.h>
 #include <peakemi/reporting/PdfReportRenderer.h>
 #include <peakemi/ui/InstrumentDock.h>
@@ -470,19 +473,36 @@ void MainWindow::onConnectRequested(const TransportDescriptor& descriptor, const
             break;
         }
         case TransportKind::Tcp:
-        case TransportKind::Vxi11:
             transport = std::make_shared<hal::TcpScpiTransport>(descriptor);
+            break;
+        case TransportKind::Vxi11:
+            transport = std::make_shared<hal::Vxi11Transport>(descriptor);
             break;
         case TransportKind::Serial:
             transport = std::make_shared<hal::SerialScpiTransport>(descriptor);
             break;
         case TransportKind::UsbTmc:
+            if (!hal::UsbTmcTransport::isSupported()) {
+                QMessageBox::information(
+                    this,
+                    tr("USB support not built in"),
+                    tr("This build has no USBTMC transport. Configure PeakEmi with "
+                       "-DPEAKEMI_WITH_USBTMC=ON to talk to USB instruments."));
+                return;
+            }
+            transport = std::make_shared<hal::UsbTmcTransport>(descriptor);
+            break;
         case TransportKind::Visa:
-            QMessageBox::information(this,
-                                     tr("Transport not available"),
-                                     tr("This build does not include the %1 transport.")
-                                         .arg(qs(transportKindKey(descriptor.kind))));
-            return;
+            if (!hal::VisaTransport::isAvailable()) {
+                QMessageBox::information(
+                    this,
+                    tr("No VISA runtime"),
+                    tr("No VISA runtime was found on this machine. PeakEmi talks to "
+                       "instruments directly over TCP, VXI-11, USB and serial without it."));
+                return;
+            }
+            transport = std::make_shared<hal::VisaTransport>(descriptor);
+            break;
     }
 
     if (!driver) {

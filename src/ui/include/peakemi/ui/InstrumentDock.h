@@ -1,6 +1,7 @@
 #pragma once
 
 #include <peakemi/hal/Discovery.h>
+#include <peakemi/hal/UsbDiscovery.h>
 
 #include <QDockWidget>
 #include <QList>
@@ -40,11 +41,15 @@ private slots:
     void addManualAddress();
     void onInstrumentFound(const peakemi::hal::DiscoveredInstrument& instrument);
     void onScanFinished(int found, bool aborted);
+    void onUsbInstrumentFound(const peakemi::hal::DiscoveredInstrument& instrument);
+    void onUsbInstrumentLost(const QString& address);
+    void refreshVisaResources();
     void connectSelected();
 
 private:
     [[nodiscard]] QTreeWidgetItem* categoryItem(const QString& name);
     void addInstrument(const hal::DiscoveredInstrument& instrument, const QString& category);
+    void removeInstrument(const QString& address);
     void populateDrivers();
 
     QTreeWidget* m_tree{nullptr};
@@ -57,6 +62,7 @@ private:
 
     QThread* m_discoveryThread{nullptr};
     hal::LanDiscoveryWorker* m_discovery{nullptr};
+    hal::UsbDiscoveryWorker* m_usb{nullptr};
     QList<hal::DiscoveredInstrument> m_instruments;
 };
 

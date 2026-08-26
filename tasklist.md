@@ -16,6 +16,9 @@
   with Siglent SSA/SVA and Rigol DSA profiles.
 * **Engine** — two-phase scan → detect → verify state machine on a worker thread, with
   pause/resume/abort, bounded retries, multi-pass max-hold and autosave.
+* **Transports (M5)** — VXI-11 over ONC-RPC including the portmapper lookup, USBTMC over
+  libusb with USB hotplug discovery, and an optional VISA path resolved at run time. The
+  optional buses compile in or out without touching the rest of the tree.
 * **Reporting (`peakemi_reporting`)** — CSV export of traces and results, PDF report.
 * **User interface (`peakemi_ui`)** — main window with instrument, configuration, results
   and log/SCPI-console docks, decimating spectrum plot behind `IPlotBackend`, run
@@ -33,7 +36,8 @@
 
 ## Next
 
-* **M5** — USBTMC and VXI-11 transports, USB hotplug discovery, more instrument drivers.
+* **M5 remainder** — drivers for more instrument families; the transports themselves are
+  done.
 * **M6** — report templates (logo, address, free text) with a template editor,
   JSON export of the result table.
 * **M7** — embedded Python bridge: bindings, plugin discovery and trust store, plugin

@@ -1,5 +1,7 @@
 #include <peakemi/drivers/SimulatedDriver.h>
 #include <peakemi/hal/DriverRegistry.h>
+#include <peakemi/hal/UsbTmcTransport.h>
+#include <peakemi/hal/VisaTransport.h>
 #include <peakemi/ui/InstrumentDock.h>
 
 #include <QComboBox>
@@ -125,6 +127,24 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
             });
     m_discoveryThread->start();
 
+    // The USB bus is watched from the start: a USBTMC instrument plugged in
+    // while PeakEmi runs has to appear without the user asking (FR-DIS-2).
+    if (hal::UsbTmcTransport::isSupported()) {
+        m_usb = new hal::UsbDiscoveryWorker{this};
+        connect(m_usb,
+                &hal::UsbDiscoveryWorker::instrumentFound,
+                this,
+                &InstrumentDock::onUsbInstrumentFound);
+        connect(m_usb,
+                &hal::UsbDiscoveryWorker::instrumentLost,
+                this,
+                &InstrumentDock::onUsbInstrumentLost);
+        connect(m_usb, &hal::UsbDiscoveryWorker::failed, this, [this](const QString& reason) {
+            emit statusMessage(tr("USB discovery stopped: %1").arg(reason));
+        });
+        m_usb->start();
+    }
+
     populateDrivers();
 
     // The simulated instrument is always available: a new user can complete a
@@ -145,6 +165,45 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
             .description = tr("Deterministic synthetic spectrum, no hardware needed")},
         categoryFor(TransportKind::Simulated));
     refreshSerialPorts();
+    refreshVisaResources();
+    m_tree->expandAll();
+}
+
+void InstrumentDock::onUsbInstrumentFound(const hal::DiscoveredInstrument& instrument)
+{
+    addInstrument(instrument, categoryFor(TransportKind::UsbTmc));
+    m_tree->expandAll();
+    emit statusMessage(tr("USB instrument connected: %1").arg(instrument.description));
+}
+
+void InstrumentDock::onUsbInstrumentLost(const QString& address)
+{
+    removeInstrument(address);
+    emit statusMessage(tr("USB instrument removed: %1").arg(address));
+}
+
+void InstrumentDock::refreshVisaResources()
+{
+    if (!hal::VisaTransport::isAvailable()) {
+        return;
+    }
+    auto resources = hal::VisaTransport::findResources();
+    if (!resources) {
+        emit statusMessage(tr("VISA: %1").arg(QString::fromStdString(resources.error().message())));
+        return;
+    }
+    for (const auto& resource : *resources) {
+        hal::DiscoveredInstrument instrument{
+            .descriptor = TransportDescriptor{.kind = TransportKind::Visa,
+                                              .address = resource,
+                                              .port = 0,
+                                              .baudRate = 0,
+                                              .terminator = "\n",
+                                              .defaultTimeout = std::chrono::milliseconds{5000}},
+            .identity = {},
+            .description = tr("Reported by %1").arg(hal::VisaTransport::runtimeName())};
+        addInstrument(instrument, tr("VISA"));
+    }
     m_tree->expandAll();
 }
 
@@ -198,6 +257,18 @@ void InstrumentDock::addInstrument(const hal::DiscoveredInstrument& instrument,
     item->setData(0, DescriptorRole, static_cast<int>(m_instruments.size()));
     item->setToolTip(0, instrument.description);
     m_instruments.append(instrument);
+}
+
+void InstrumentDock::removeInstrument(const QString& address)
+{
+    for (int i = 0; i < m_tree->topLevelItemCount(); ++i) {
+        auto* category = m_tree->topLevelItem(i);
+        for (int child = category->childCount() - 1; child >= 0; --child) {
+            if (category->child(child)->text(1) == address) {
+                delete category->takeChild(child);
+            }
+        }
+    }
 }
 
 void InstrumentDock::refreshSerialPorts()
@@ -271,11 +342,23 @@ void InstrumentDock::addManualAddress()
     auto* form = new QFormLayout{&dialog};
 
     auto* host = new QLineEdit{QStringLiteral("192.168.1.10"), &dialog};
+    auto* kind = new QComboBox{&dialog};
+    kind->addItem(tr("Raw SCPI socket"), static_cast<int>(TransportKind::Tcp));
+    kind->addItem(tr("VXI-11"), static_cast<int>(TransportKind::Vxi11));
     auto* port = new QSpinBox{&dialog};
-    port->setRange(1, 65535);
+    port->setRange(0, 65535);
     port->setValue(5025);
+    port->setSpecialValueText(tr("ask the portmapper"));
     form->addRow(tr("Host"), host);
+    form->addRow(tr("Protocol"), kind);
     form->addRow(tr("Port"), port);
+
+    // VXI-11 finds its own port through the portmapper, so 0 is the sensible
+    // default there and a raw socket needs a real one.
+    connect(kind, &QComboBox::currentIndexChanged, &dialog, [kind, port] {
+        const auto selected = static_cast<TransportKind>(kind->currentData().toInt());
+        port->setValue(selected == TransportKind::Vxi11 ? 0 : 5025);
+    });
 
     auto* buttons = new QDialogButtonBox{QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog};
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
@@ -287,15 +370,16 @@ void InstrumentDock::addManualAddress()
     }
 
     hal::DiscoveredInstrument instrument{
-        .descriptor = TransportDescriptor{.kind = TransportKind::Tcp,
-                                          .address = host->text().trimmed().toStdString(),
-                                          .port = port->value(),
-                                          .baudRate = 0,
-                                          .terminator = "\n",
-                                          .defaultTimeout = std::chrono::milliseconds{5000}},
+        .descriptor =
+            TransportDescriptor{.kind = static_cast<TransportKind>(kind->currentData().toInt()),
+                                .address = host->text().trimmed().toStdString(),
+                                .port = port->value(),
+                                .baudRate = 0,
+                                .terminator = "\n",
+                                .defaultTimeout = std::chrono::milliseconds{5000}},
         .identity = {},
         .description = tr("Added manually")};
-    addInstrument(instrument, categoryFor(TransportKind::Tcp));
+    addInstrument(instrument, categoryFor(instrument.descriptor.kind));
     m_tree->expandAll();
 }
 
