@@ -72,12 +72,13 @@ if(APPLE)
     # `cmake --build . --target dmg` produces a disk image from the bundle that
     # was just built: Qt deployed inside it, an Applications symlink to drag
     # onto, the licence, and a mount-and-launch check before it is called done.
-    set(PEAKEMI_DMG "${CMAKE_BINARY_DIR}/PeakEmi-${PROJECT_VERSION}-macos-${CMAKE_SYSTEM_PROCESSOR}.dmg")
+    set(PEAKEMI_DMG
+        "${CMAKE_BINARY_DIR}/PeakEmi-${PEAKEMI_VERSION_LABEL}-macos-${CMAKE_SYSTEM_PROCESSOR}.dmg")
     add_custom_target(dmg
         COMMAND "${PROJECT_SOURCE_DIR}/scripts/macos/make-dmg.sh"
                 --app "$<TARGET_BUNDLE_DIR:peakemi>"
                 --output "${PEAKEMI_DMG}"
-                --version "${PROJECT_VERSION}"
+                --version "${PEAKEMI_VERSION_LABEL}"
                 --qt-bin "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}"
         DEPENDS peakemi
         COMMENT "Bundling ${PEAKEMI_DMG}"

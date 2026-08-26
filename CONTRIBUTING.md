@@ -76,19 +76,44 @@ green locally. They are worth knowing before you spend a round trip on one:
 * **libstdc++ and libc++ disagree about which headers include which.** A translation unit
   that compiles on macOS can fail on Linux for a missing `<cstdint>`. Include what you use.
 
+## Versioning
+
+**The git tag is the version.** `cmake/GitVersion.cmake` reads the nearest `v*` tag at
+configure time and hands it to `project(VERSION ...)`; nothing in the tree repeats it, so
+nothing in the tree can disagree with it. A build also reports the commit it came from, and
+says so when the working tree was dirty:
+
+```
+-- PeakEmi 0.2.0+3d09efc.dirty
+```
+
+That string is `peakemi::ProjectVersionFull`, and it is the first line of every log — which
+build produced a set of measurements is a question that gets asked months later.
+
+Two consequences worth knowing:
+
+* **Clone with tags.** A shallow clone sees no tag, so the version falls back to `0.0.0` with
+  a warning. CI checks out with `fetch-depth: 0` for this reason.
+* **A new tag re-runs configure by itself.** The module watches `.git/HEAD`, `.git/packed-refs`
+  and `.git/refs/tags`, so `cmake --build` after tagging picks the new version up rather than
+  building a stale one.
+
 ## Releases
 
 Tagging a commit on `main` with `vMAJOR.MINOR.PATCH` builds, tests and publishes an AppImage,
-a macOS `.dmg` and a Windows zip as a GitHub release:
+a macOS `.dmg` and a Windows zip as a GitHub release — the tag is the whole procedure, there
+is no version to bump first:
 
 ```bash
-# bump project(VERSION ...) in CMakeLists.txt first — the workflow verifies it matches
 git tag -a v0.2.0 -m "PeakEmi 0.2.0"
 git push origin v0.2.0
 ```
 
-Tags that do not point at a commit on `main`, or whose version disagrees with `CMakeLists.txt`,
-are rejected before anything is built. A tag such as `v0.2.0-rc1` publishes a pre-release.
+Tags that do not point at a commit on `main` are rejected before anything is built. The
+release build is configured with `-DPEAKEMI_EXPECT_VERSION=<version>`, so a checkout that
+cannot see the tag fails the build instead of publishing an artifact labelled `0.0.0`. A tag
+such as `v0.2.0-rc1` publishes a pre-release, and reports itself as `0.2.0-rc1` while
+`project(VERSION)` uses the numeric `0.2.0`.
 
 ### Building the macOS disk image by hand
 

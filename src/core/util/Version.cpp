@@ -11,8 +11,11 @@ std::string_view buildIdentification()
 #else
     static constexpr std::string_view Configuration = "";
 #endif
-    static const std::string identification =
-        std::string{ProjectName} + ' ' + std::string{ProjectVersion} + std::string{Configuration};
+    // The full version rather than the bare one: pre-compliance data is only
+    // worth as much as the ability to say which build produced it.
+    static const std::string identification = std::string{ProjectName} + ' ' +
+                                              std::string{ProjectVersionFull} +
+                                              std::string{Configuration};
     return identification;
 }
 
