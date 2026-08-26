@@ -17,6 +17,29 @@ RunController::RunController(QObject* parent)
     m_engine->moveToThread(m_thread);
     connect(m_thread, &QThread::finished, m_engine, &QObject::deleteLater);
 
+    // The engine decides when the operator's commands are sent; reaching the
+    // equipment is the transport's business, which lives here.
+    m_engine->setCommandSender([this](const std::string& command) -> Status {
+        if (!m_transport) {
+            return fail(ErrorCode::NotConnected, "no instrument is connected");
+        }
+        if (auto status = m_transport->write(command); !status) {
+            return status;
+        }
+        if (command.find('?') == std::string::npos) {
+            return {};
+        }
+        // A query is worth waiting for: it is how an operator checks that the
+        // equipment did what the command asked.
+        const CancelToken cancel;
+        auto response = m_transport->read(m_config.commandTimeout, cancel);
+        if (!response) {
+            return std::unexpected(response.error());
+        }
+        emit rawResponse(QStringLiteral("< %1").arg(QString::fromStdString(*response)));
+        return {};
+    });
+
     connect(m_engine, &MeasurementEngine::phaseChanged, this, &RunController::phaseChanged);
     connect(m_engine, &MeasurementEngine::traceAcquired, this, &RunController::traceAcquired);
     connect(m_engine, &MeasurementEngine::peaksFlagged, this, &RunController::peaksFlagged);

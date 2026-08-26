@@ -1,4 +1,5 @@
 #include <peakemi/core/Logging.h>
+#include <peakemi/drivers/InstrumentProfiles.h>
 #include <peakemi/drivers/ScpiAnalyzerDriver.h>
 #include <peakemi/hal/Scpi.h>
 
@@ -118,7 +119,29 @@ Result<InstrumentId> ScpiAnalyzerDriver::identify()
         return std::unexpected(response.error());
     }
     m_identity = scpi::parseIdn(*response);
+    adoptProfileFor(m_identity);
     return m_identity;
+}
+
+void ScpiAnalyzerDriver::adoptProfileFor(const InstrumentId& identity)
+{
+    auto profile = profileFor(identity.manufacturer, identity.model);
+    if (!profile) {
+        // An unknown model of a known family keeps the family defaults, which
+        // are the widest of the family: better to attempt a sweep the
+        // instrument may refuse than to reject one it would have accepted.
+        qCInfo(lcDriver) << "no profile for" << QString::fromStdString(identity.model)
+                         << "- keeping the family defaults";
+        return;
+    }
+
+    m_capabilities = profile->capabilities;
+    m_dialect = profile->dialect;
+    m_info.name = profile->name;
+    m_profileAdopted = true;
+    qCInfo(lcDriver) << "profile adopted:" << QString::fromStdString(profile->name)
+                     << "- range up to" << toMegahertz(profile->capabilities.range.stop) << "MHz,"
+                     << profile->capabilities.maximumPoints << "points";
 }
 
 Status ScpiAnalyzerDriver::configureSweep(const SweepParams& requested)
@@ -143,6 +166,11 @@ Status ScpiAnalyzerDriver::configureSweep(const SweepParams& requested)
         {m_dialect.preamp, requested.preamp ? "ON" : "OFF"},
     };
     for (const auto& [command, value] : steps) {
+        // An empty command means this model has no such setting -- the Siglent
+        // point count, for instance, is fixed and refuses to be written.
+        if (command.empty()) {
+            continue;
+        }
         if (auto status = sendValue(command, value); !status) {
             return status;
         }
@@ -281,97 +309,30 @@ void ScpiAnalyzerDriver::setTimeout(std::chrono::milliseconds timeout)
 
 DriverPtr makeSiglentSsaDriver()
 {
-    const DriverInfo info{
-        .id = "siglent.ssa3000x",
-        .name = "Siglent SSA3000X / SVA1000X",
-        .vendor = "Siglent",
-        .version = "1.0",
-        .origin = "built-in",
-        .supportedTransports = {TransportKind::Tcp, TransportKind::UsbTmc, TransportKind::Serial}};
-    const Capabilities capabilities{.range = FrequencyRange{hertz(9000), gigahertz(3.2)},
-                                    .minimumPoints = 751,
-                                    .maximumPoints = 751,
-                                    .detectors = {Detector::Peak,
-                                                  Detector::QuasiPeak,
-                                                  Detector::Average,
-                                                  Detector::Rms,
-                                                  Detector::Sample},
-                                    .resolutionBandwidths = {hertz(10),
-                                                             hertz(30),
-                                                             hertz(100),
-                                                             hertz(300),
-                                                             kilohertz(1),
-                                                             kilohertz(3),
-                                                             kilohertz(10),
-                                                             kilohertz(30),
-                                                             kilohertz(100),
-                                                             kilohertz(300),
-                                                             megahertz(1)},
-                                    .videoBandwidths = {hertz(1),
-                                                        hertz(10),
-                                                        hertz(100),
-                                                        kilohertz(1),
-                                                        kilohertz(10),
-                                                        kilohertz(100),
-                                                        megahertz(1)},
-                                    .minimumAttenuation = decibel(0.0),
-                                    .maximumAttenuation = decibel(31.0),
-                                    .attenuationStep = decibel(1.0),
-                                    .minimumRefLevel = decibel(-100.0),
-                                    .maximumRefLevel = decibel(130.0),
-                                    .preamp = true,
-                                    .trackingGenerator = true,
-                                    .zeroSpan = true,
-                                    .nativeUnit = AmplitudeUnit::dBuV};
-    return std::make_shared<ScpiAnalyzerDriver>(info, capabilities, ScpiDialect{});
+    const auto family = familyProfile("Siglent");
+    const DriverInfo info{.id = "siglent.ssa3000x",
+                          .name = family.name,
+                          .vendor = "Siglent",
+                          .version = "1.0",
+                          .origin = "built-in",
+                          .supportedTransports = {TransportKind::Tcp,
+                                                  TransportKind::Vxi11,
+                                                  TransportKind::UsbTmc,
+                                                  TransportKind::Serial}};
+    return std::make_shared<ScpiAnalyzerDriver>(info, family.capabilities, family.dialect);
 }
 
 DriverPtr makeRigolDsaDriver()
 {
-    const DriverInfo info{.id = "rigol.dsa800",
-                          .name = "Rigol DSA700 / DSA800",
-                          .vendor = "Rigol",
-                          .version = "1.0",
-                          .origin = "built-in",
-                          .supportedTransports = {TransportKind::Tcp, TransportKind::UsbTmc}};
-    const Capabilities capabilities{.range = FrequencyRange{hertz(9000), gigahertz(1.5)},
-                                    .minimumPoints = 601,
-                                    .maximumPoints = 601,
-                                    .detectors = {Detector::Peak,
-                                                  Detector::QuasiPeak,
-                                                  Detector::Average,
-                                                  Detector::Rms,
-                                                  Detector::Sample},
-                                    .resolutionBandwidths = {hertz(10),
-                                                             hertz(30),
-                                                             hertz(100),
-                                                             hertz(300),
-                                                             kilohertz(1),
-                                                             kilohertz(3),
-                                                             kilohertz(10),
-                                                             kilohertz(30),
-                                                             kilohertz(100),
-                                                             kilohertz(300),
-                                                             megahertz(1)},
-                                    .videoBandwidths = {hertz(1),
-                                                        hertz(10),
-                                                        hertz(100),
-                                                        kilohertz(1),
-                                                        kilohertz(10),
-                                                        kilohertz(100),
-                                                        megahertz(1),
-                                                        megahertz(3)},
-                                    .minimumAttenuation = decibel(0.0),
-                                    .maximumAttenuation = decibel(30.0),
-                                    .attenuationStep = decibel(1.0),
-                                    .minimumRefLevel = decibel(-100.0),
-                                    .maximumRefLevel = decibel(120.0),
-                                    .preamp = true,
-                                    .trackingGenerator = true,
-                                    .zeroSpan = true,
-                                    .nativeUnit = AmplitudeUnit::dBuV};
-
-    return std::make_shared<ScpiAnalyzerDriver>(info, capabilities, ScpiDialect{});
+    const auto family = familyProfile("Rigol");
+    const DriverInfo info{
+        .id = "rigol.dsa800",
+        .name = family.name,
+        .vendor = "Rigol",
+        .version = "1.0",
+        .origin = "built-in",
+        .supportedTransports = {TransportKind::Tcp, TransportKind::Vxi11, TransportKind::UsbTmc}};
+    return std::make_shared<ScpiAnalyzerDriver>(info, family.capabilities, family.dialect);
 }
 
 } // namespace peakemi::drivers

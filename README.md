@@ -5,7 +5,7 @@
 [![Latest release](https://img.shields.io/github/v/release/bitcrushtesting/peakemi?include_prereleases&sort=semver)](https://github.com/bitcrushtesting/peakemi/releases)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0--or--later-blue)](LICENSE)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-00599C)](docs/architecture.md#23-permitted-c23-subset)
-[![Qt 6.5+](https://img.shields.io/badge/Qt-6.5%2B-41CD52)](https://www.qt.io/)
+[![Qt 6.8+](https://img.shields.io/badge/Qt-6.8%2B-41CD52)](https://www.qt.io/)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#building)
 
 Cross-platform, open-source **EMI pre-compliance measurement suite**. PeakEmi drives spectrum
@@ -18,7 +18,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
 | | |
 |---|---|
 | Status | Early development — the measurement suite, its instrument buses, reporting and the plugin bridge are in place (milestones M0–M7) |
-| Language | C++23, Qt 6.5+ (developed on 6.10) |
+| Language | C++23, Qt 6.8+ (developed on 6.10) |
 | Platforms | Windows 10/11, Linux (Ubuntu 22.04+), macOS 13+ |
 | Docs | [Contributing](CONTRIBUTING.md) · [Requirements](docs/requirements.md) · [Architecture](docs/architecture.md) · [Plugin API](docs/plugin-api.md) · [Tasklist](tasklist.md) |
 
@@ -60,6 +60,14 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images
 * **Instruments** — raw SCPI over TCP, VXI-11, USBTMC and serial, `*IDN?`-scored driver
   selection, bounded and opt-in LAN sweep, live USB hotplug detection, serial port
   enumeration, an optional VISA path, and a raw SCPI console.
+* **Supported analyzers** — Siglent SSA3021X/3032X/3075X and SVA1015X/1032X/1075X, Rigol
+  DSA705/710 and DSA815/832/875. Each model carries its own frequency range, point count
+  and command dialect, so a sweep the instrument cannot make is refused with a reason
+  instead of being sent and rejected.
+* **Commands around a run** — a run can send operator-supplied commands when it starts and
+  when it ends, which is how a LISN, a relay box or a mast that speaks SCPI is switched.
+  The closing commands are sent whether the run finished, was aborted or failed. PeakEmi
+  drives no relays itself.
 * **Limits and corrections** — built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
   CSV/JSON import of custom limits and of antenna/cable/gain correction tables
   (see [`resources/`](resources) for the documented file formats).
@@ -83,7 +91,7 @@ Not yet implemented: the embedded Python plugin bridge — see [tasklist.md](tas
 
 ## Building
 
-Requirements: CMake ≥ 3.24, Ninja, a C++23 compiler (MSVC 2022 / GCC 13+ / Clang 17+) and Qt 6.5+
+Requirements: CMake ≥ 3.24, Ninja, a C++23 compiler (MSVC 2022 / GCC 13+ / Clang 17+) and Qt 6.8+
 with the `Widgets`, `Network`, `SerialPort`, `PrintSupport`, `Svg` and `Test` modules.
 
 ```bash

@@ -77,6 +77,37 @@ void MeasurementEngine::setDriver(DriverPtr driver)
     m_driver = std::move(driver);
 }
 
+void MeasurementEngine::setCommandSender(CommandSender sender)
+{
+    m_commandSender = std::move(sender);
+}
+
+Status MeasurementEngine::sendCommands(const std::vector<std::string>& commands,
+                                       std::string_view phase)
+{
+    if (commands.empty()) {
+        return {};
+    }
+    if (!m_commandSender) {
+        return fail(ErrorCode::NotConnected,
+                    "the run carries " + std::string{phase} +
+                        " commands but nothing can send them");
+    }
+
+    for (const auto& command : commands) {
+        if (command.empty()) {
+            continue;
+        }
+        emitLog(tr("%1 command: %2")
+                    .arg(QString::fromUtf8(phase.data(), static_cast<qsizetype>(phase.size())),
+                         QString::fromStdString(command)));
+        if (auto status = m_commandSender(command); !status) {
+            return status;
+        }
+    }
+    return {};
+}
+
 void MeasurementEngine::setConfiguration(RunConfiguration config)
 {
     m_config = std::move(config);
@@ -333,6 +364,23 @@ void MeasurementEngine::start()
     QElapsedTimer timer;
     timer.start();
 
+    // Whatever happens from here on, the stop commands run: a LISN left
+    // switched to the wrong line after a failed run is worse than the failure.
+    const auto runStopCommands = [this] {
+        if (auto status = sendCommands(m_config.stopCommands, "stop"); !status) {
+            emitLog(tr("Stop command failed: %1").arg(describe(status.error())));
+        }
+    };
+
+    if (auto status = sendCommands(m_config.startCommands, "start"); !status) {
+        emitLog(tr("Start command failed: %1").arg(describe(status.error())));
+        runStopCommands();
+        emit runFailed(status.error());
+        emit runFinished(session);
+        finish(Phase::Failed);
+        return;
+    }
+
     for (int pass = 1; pass <= m_config.passes; ++pass) {
         if (m_config.passes > 1) {
             emitLog(tr("Pass %1 of %2.").arg(pass).arg(m_config.passes));
@@ -341,6 +389,7 @@ void MeasurementEngine::start()
         auto scan = runPhase1();
         if (!scan) {
             const Error& error = scan.error();
+            runStopCommands();
             if (error.code == ErrorCode::Cancelled) {
                 emit runFinished(session);
                 finish(Phase::Aborted);
@@ -374,6 +423,7 @@ void MeasurementEngine::start()
         for (int i = 0; i < total; ++i) {
             if (!waitWhilePaused()) {
                 autosave(session);
+                runStopCommands();
                 emit runFinished(session);
                 finish(Phase::Aborted);
                 return;
@@ -383,6 +433,7 @@ void MeasurementEngine::start()
             if (!point) {
                 const Error& error = point.error();
                 autosave(session);
+                runStopCommands();
                 if (error.code == ErrorCode::Cancelled) {
                     emit runFinished(session);
                     finish(Phase::Aborted);
@@ -427,6 +478,7 @@ void MeasurementEngine::start()
 
     session.meta.modifiedAt = std::chrono::system_clock::now();
     autosave(session);
+    runStopCommands();
     emitLog(tr("Run finished: %1 verified point(s) in %2 s.")
                 .arg(session.results.size())
                 .arg(static_cast<double>(timer.elapsed()) / 1000.0, 0, 'f', 1));
