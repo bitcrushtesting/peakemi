@@ -34,7 +34,11 @@ jobs:
             preset: ci
 
     steps:
+      # Full history: the version comes from the nearest release tag, and a
+      # shallow clone has none.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -81,6 +85,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # clang 18 cannot parse libstdc++'s <expected> and reports every use of
       # std::expected as an unknown template, so the analyser needs a newer

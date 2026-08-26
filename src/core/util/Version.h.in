@@ -5,11 +5,24 @@
 
 namespace peakemi {
 
-/// Semantic version of the application, e.g. "0.1.0".
-inline constexpr std::string_view ProjectVersion = "@PROJECT_VERSION@";
-inline constexpr int ProjectVersionMajor = @PROJECT_VERSION_MAJOR@;
-inline constexpr int ProjectVersionMinor = @PROJECT_VERSION_MINOR@;
-inline constexpr int ProjectVersionPatch = @PROJECT_VERSION_PATCH@;
+/// Version of the application, from the git tag it was built at, e.g. "0.1.0"
+/// or "0.3.0-rc1". This is the version a measurement is recorded against.
+inline constexpr std::string_view ProjectVersion = "@PEAKEMI_VERSION_LABEL@";
+inline constexpr int ProjectVersionMajor = @PEAKEMI_VERSION_MAJOR@;
+inline constexpr int ProjectVersionMinor = @PEAKEMI_VERSION_MINOR@;
+inline constexpr int ProjectVersionPatch = @PEAKEMI_VERSION_PATCH@;
+
+/// The commit the build came from, e.g. "abc1234", or "unknown" when built
+/// outside a repository.
+inline constexpr std::string_view ProjectCommit = "@PEAKEMI_VERSION_COMMIT@";
+
+/// True when the working tree carried uncommitted changes at configure time.
+/// A build that says so is one whose source you cannot get back from the tag.
+inline constexpr bool ProjectBuildIsDirty = @PEAKEMI_VERSION_DIRTY@ != 0;
+
+/// Version and commit together, e.g. "0.1.0+abc1234" or "0.1.0+abc1234.dirty".
+/// Enough to identify exactly which source produced a build.
+inline constexpr std::string_view ProjectVersionFull = "@PEAKEMI_VERSION_FULL@";
 
 /// Human readable application name, used for window titles and settings paths.
 inline constexpr std::string_view ProjectName = "@PROJECT_NAME@";
@@ -18,7 +31,8 @@ inline constexpr std::string_view ProjectName = "@PROJECT_NAME@";
 inline constexpr std::string_view OrganizationName = "PeakEmi";
 inline constexpr std::string_view OrganizationDomain = "peakemi.org";
 
-/// One-line build identification: name, version and build configuration.
+/// One-line build identification: name, full version and build configuration,
+/// e.g. "PeakEmi 0.2.0+abc1234 (debug)".
 [[nodiscard]] std::string_view buildIdentification();
 
 } // namespace peakemi
