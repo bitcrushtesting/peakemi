@@ -22,10 +22,14 @@ constexpr int PathRole = Qt::UserRole + 1;
 [[nodiscard]] QString stateText(python::PluginState state)
 {
     switch (state) {
-        case python::PluginState::Loaded:           return QObject::tr("Loaded");
-        case python::PluginState::AwaitingApproval: return QObject::tr("Awaiting approval");
-        case python::PluginState::Rejected:         return QObject::tr("Rejected");
-        case python::PluginState::Failed:           return QObject::tr("Error");
+        case python::PluginState::Loaded:
+            return QObject::tr("Loaded");
+        case python::PluginState::AwaitingApproval:
+            return QObject::tr("Awaiting approval");
+        case python::PluginState::Rejected:
+            return QObject::tr("Rejected");
+        case python::PluginState::Failed:
+            return QObject::tr("Error");
     }
     return {};
 }
@@ -33,10 +37,13 @@ constexpr int PathRole = Qt::UserRole + 1;
 [[nodiscard]] QColor stateColour(python::PluginState state)
 {
     switch (state) {
-        case python::PluginState::Loaded:           return QColor{0xE6, 0xF4, 0xEA};
-        case python::PluginState::AwaitingApproval: return QColor{0xFE, 0xF7, 0xE0};
+        case python::PluginState::Loaded:
+            return QColor{0xE6, 0xF4, 0xEA};
+        case python::PluginState::AwaitingApproval:
+            return QColor{0xFE, 0xF7, 0xE0};
         case python::PluginState::Rejected:
-        case python::PluginState::Failed:           return QColor{0xFC, 0xE8, 0xE6};
+        case python::PluginState::Failed:
+            return QColor{0xFC, 0xE8, 0xE6};
     }
     return {};
 }
@@ -153,20 +160,20 @@ void PluginManagerDialog::updateButtons()
         return nullptr;
     }();
 
-    m_approveButton->setEnabled(selected != nullptr
-                                && selected->state != python::PluginState::Loaded);
-    m_revokeButton->setEnabled(selected != nullptr
-                               && m_registry.trustStore().state(path)
-                                      != python::TrustState::Unknown);
+    m_approveButton->setEnabled(selected != nullptr &&
+                                selected->state != python::PluginState::Loaded);
+    m_revokeButton->setEnabled(selected != nullptr &&
+                               m_registry.trustStore().state(path) != python::TrustState::Unknown);
 
     if (selected == nullptr) {
         m_detail->clear();
         return;
     }
 
-    QString detail = selected->manifest.description.empty()
-                         ? QString{}
-                         : QString::fromStdString(selected->manifest.description) + QLatin1Char('\n');
+    QString detail =
+        selected->manifest.description.empty()
+            ? QString{}
+            : QString::fromStdString(selected->manifest.description) + QLatin1Char('\n');
     if (!selected->manifest.apiVersion.empty()) {
         detail += tr("Plugin API %1").arg(QString::fromStdString(selected->manifest.apiVersion));
     }
