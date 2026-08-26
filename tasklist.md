@@ -42,8 +42,10 @@
   done.
 * **M7** — embedded Python bridge: bindings, plugin discovery and trust store, plugin
   manager UI, example plugin.
-* **M8** — code signing and notarisation for the macOS and Windows artifacts, and a Windows
-  installer.
+* **M8** — a notarised macOS release (the disk image, its icon, the bundle layout and
+  ad-hoc signing are done; a Developer ID identity and notarisation credentials are not
+  something the build can supply for itself), code signing for the Windows artifacts, and
+  a Windows installer.
 * **Open questions** — plot backend benchmark (Qt Graphs via `QQuickWidget` vs the
   current QPainter backend), LISN control, minimum Qt version.
   See [requirements.md §6](docs/requirements.md#6-assumptions-risks--open-questions).

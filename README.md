@@ -127,7 +127,33 @@ git push origin v0.2.0
 
 Tags that do not point at a commit on `main`, or whose version disagrees with `CMakeLists.txt`,
 are rejected before anything is built. A tag such as `v0.2.0-rc1` publishes a pre-release.
-The macOS and Windows artifacts are not code-signed yet (milestone M8).
+
+### Building the macOS disk image by hand
+
+```bash
+cmake --build --preset release --target dmg
+```
+
+This deploys Qt into `PeakEmi.app`, signs it, and writes
+`build/release/PeakEmi-<version>-macos-<arch>.dmg` containing the application, a
+symlink to `/Applications` to drag it onto, and the licence. The image is then mounted and
+the application inside it is launched, so a bundle that still depends on the Qt of the
+machine that built it fails at build time instead of on a user's machine.
+
+The bundle carries its own icon, the example limit lines and correction tables, and the
+`offscreen` platform plugin, so the shipped application can also be scripted without a
+window server.
+
+Signing uses an ad-hoc signature unless you pass a real identity:
+
+```bash
+scripts/macos/make-dmg.sh --app build/release/bin/peakemi.app \
+    --output PeakEmi.dmg --version 0.1.0 --qt-bin "$QT_ROOT_DIR/bin" \
+    --identity "Developer ID Application: Your Name (TEAMID)"
+```
+
+An ad-hoc signature runs on the machine that built it; distributing without a Developer ID
+and notarisation still makes Gatekeeper warn on first launch (milestone M8).
 
 ## Repository layout
 
