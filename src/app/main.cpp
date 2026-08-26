@@ -24,7 +24,9 @@ int main(int argc, char* argv[])
 {
     QApplication application(argc, argv);
     QCoreApplication::setApplicationName(toQString(peakemi::ProjectName));
-    QCoreApplication::setApplicationVersion(toQString(peakemi::ProjectVersion));
+    // The full version, because --version is asked precisely when someone
+    // needs to know which build they have.
+    QCoreApplication::setApplicationVersion(toQString(peakemi::ProjectVersionFull));
     QCoreApplication::setOrganizationName(toQString(peakemi::OrganizationName));
     QCoreApplication::setOrganizationDomain(toQString(peakemi::OrganizationDomain));
 
@@ -51,6 +53,10 @@ int main(int argc, char* argv[])
     QLoggingCategory::setFilterRules(parser.isSet(verboseOption)
                                          ? QStringLiteral("peakemi.*.debug=true")
                                          : QStringLiteral("peakemi.*.debug=false"));
+
+    // First line of every log: which build wrote the rest of it. A report
+    // question months later starts here.
+    qCInfo(peakemi::lcCore) << toQString(peakemi::buildIdentification());
 
     // Value types travel across thread boundaries by queued connection, which
     // needs them registered before the first connect().

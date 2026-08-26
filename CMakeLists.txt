@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 
+# Before project(), because it supplies the version project() is given: the git
+# tag is the only definition of it anywhere in the tree.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(GitVersion)
+
 project(PeakEmi
-    VERSION      0.2.0
+    VERSION      ${PEAKEMI_VERSION}
     DESCRIPTION  "Cross-platform EMI pre-compliance measurement suite"
     HOMEPAGE_URL "https://github.com/bitcrushtesting/peakemi"
     LANGUAGES    CXX)
@@ -9,7 +14,6 @@ project(PeakEmi
 # ---------------------------------------------------------------------------
 # Global settings
 # ---------------------------------------------------------------------------
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_CXX_STANDARD          23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -60,7 +64,7 @@ endif()
 # Summary
 # ---------------------------------------------------------------------------
 message(STATUS "")
-message(STATUS "PeakEmi ${PROJECT_VERSION}")
+message(STATUS "PeakEmi ${PEAKEMI_VERSION_FULL}")
 message(STATUS "  build type ......... ${CMAKE_BUILD_TYPE}")
 message(STATUS "  compiler ........... ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "  tests .............. ${PEAKEMI_BUILD_TESTS}")
