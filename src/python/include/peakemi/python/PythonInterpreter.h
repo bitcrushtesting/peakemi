@@ -19,6 +19,7 @@ public:
 
     /// Start the interpreter if it is not running yet.
     [[nodiscard]] Status ensureStarted();
+
     [[nodiscard]] bool isRunning() const { return m_running; }
 
     /// "3.12.4 (main, ...)", or empty when the interpreter is not running.
