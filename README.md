@@ -17,7 +17,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
 
 | | |
 |---|---|
-| Status | Early development — core, HAL, engine, UI and reporting in place (milestones M0–M4, M6 partial) |
+| Status | Early development — the measurement suite, its instrument buses, reporting and the plugin bridge are in place (milestones M0–M7) |
 | Language | C++23, Qt 6.5+ (developed on 6.10) |
 | Platforms | Windows 10/11, Linux (Ubuntu 22.04+), macOS 13+ |
 | Docs | [Contributing](CONTRIBUTING.md) · [Requirements](docs/requirements.md) · [Architecture](docs/architecture.md) · [Tasklist](tasklist.md) |
