@@ -55,6 +55,11 @@ class ScpiAnalyzerDriver : public AbstractAnalyzerDriver
 {
 public:
     ScpiAnalyzerDriver(DriverInfo info, Capabilities capabilities, ScpiDialect dialect = {});
+
+    /// True once the instrument has named itself and a model profile was
+    /// adopted, rather than the family defaults the driver started with.
+    [[nodiscard]] bool hasModelProfile() const { return m_profileAdopted; }
+
     ~ScpiAnalyzerDriver() override;
 
     [[nodiscard]] DriverInfo info() const override { return m_info; }
@@ -82,8 +87,13 @@ protected:
     ScpiDialect m_dialect;
 
 private:
+    /// Narrow the capabilities and dialect to the model that just identified
+    /// itself, if one is known.
+    void adoptProfileFor(const InstrumentId& identity);
+
     DriverInfo m_info;
     Capabilities m_capabilities;
+    bool m_profileAdopted{false};
     TransportPtr m_transport;
     SweepParams m_params;
     InstrumentId m_identity;

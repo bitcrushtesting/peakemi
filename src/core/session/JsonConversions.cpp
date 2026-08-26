@@ -394,6 +394,9 @@ Json toJson(const RunConfiguration& value)
                 {"max_retries", value.maxRetries},
                 {"operation_timeout_ms", value.operationTimeout.count()},
                 {"marginal_threshold_db", value.marginalThresholdDb},
+                {"start_commands", value.startCommands},
+                {"stop_commands", value.stopCommands},
+                {"command_timeout_ms", value.commandTimeout.count()},
                 {"autosave", value.autosave},
                 {"autosave_path", value.autosavePath},
                 {"limits", std::move(limits)},
@@ -436,6 +439,10 @@ Result<RunConfiguration> runConfigurationFromJson(const Json& json)
         get<std::int64_t>(json, "operation_timeout_ms", config.operationTimeout.count())};
     config.marginalThresholdDb =
         get<double>(json, "marginal_threshold_db", config.marginalThresholdDb);
+    config.startCommands = get<std::vector<std::string>>(json, "start_commands", {});
+    config.stopCommands = get<std::vector<std::string>>(json, "stop_commands", {});
+    config.commandTimeout = std::chrono::milliseconds{
+        get<std::int64_t>(json, "command_timeout_ms", config.commandTimeout.count())};
     config.autosave = get<bool>(json, "autosave", config.autosave);
     config.autosavePath = get<std::string>(json, "autosave_path", {});
 

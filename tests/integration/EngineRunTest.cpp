@@ -82,6 +82,11 @@ private slots:
     void callerSuppliedRunIdIsKept();
     void multiPassKeepsTheWorstCase();
     void resultsExportToCsv();
+    void startAndStopCommandsBracketTheRun();
+    void stopCommandsRunAfterAnAbort();
+    void stopCommandsRunAfterAFailure();
+    void aFailingStartCommandStopsTheRun();
+    void commandsNeedSomethingToSendThem();
 };
 
 void EngineRunTest::initTestCase()
@@ -377,6 +382,150 @@ void EngineRunTest::resultsExportToCsv()
     QVERIFY(content.contains(QStringLiteral("PRE-COMPLIANCE DATA ONLY")));
     QVERIFY(content.contains(QStringLiteral("quasi-peak")));
     QCOMPARE(content.count(QLatin1Char('\n')) > static_cast<int>(session.results.size()), true);
+}
+
+void EngineRunTest::startAndStopCommandsBracketTheRun()
+{
+    MeasurementEngine engine;
+    engine.setDriver(makeDriver());
+
+    auto config = makeConfiguration();
+    config.peaks.maximumCount = 1;
+    config.startCommands = {":LISN:LINE L1", ":LISN:CLAMP ON"};
+    config.stopCommands = {":LISN:LINE OFF"};
+    engine.setConfiguration(config);
+
+    std::vector<std::string> sent;
+    engine.setCommandSender([&sent](const std::string& command) -> Status {
+        sent.push_back(command);
+        return {};
+    });
+
+    QSignalSpy finished{&engine, &MeasurementEngine::runFinished};
+    engine.start();
+
+    QCOMPARE(finished.count(), 1);
+    // In order, and the stop command last: the setup is switched before the
+    // first sweep and released after the last one.
+    QCOMPARE(sent, (std::vector<std::string>{":LISN:LINE L1", ":LISN:CLAMP ON", ":LISN:LINE OFF"}));
+}
+
+void EngineRunTest::stopCommandsRunAfterAnAbort()
+{
+    auto driver = makeDriver();
+    auto simulatedConfig = driver->config();
+    simulatedConfig.timeScale = 1.0;
+    driver->setConfig(simulatedConfig);
+
+    MeasurementEngine engine;
+    engine.setDriver(driver);
+    auto config = makeConfiguration();
+    config.dwellTime = std::chrono::milliseconds{300};
+    config.startCommands = {":LISN:LINE L1"};
+    config.stopCommands = {":LISN:LINE OFF"};
+    engine.setConfiguration(config);
+
+    std::vector<std::string> sent;
+    engine.setCommandSender([&sent](const std::string& command) -> Status {
+        sent.push_back(command);
+        return {};
+    });
+
+    std::atomic_int measured{0};
+    connect(&engine, &MeasurementEngine::pointMeasured, &engine, [&measured] {
+        measured.fetch_add(1);
+    });
+    auto* aborter = QThread::create([&engine, &measured] {
+        while (measured.load() == 0 && engine.isRunning()) {
+            QThread::msleep(5);
+        }
+        engine.requestAbort();
+    });
+    aborter->start();
+
+    engine.start();
+    aborter->wait();
+    delete aborter;
+
+    // A LISN left switched to a live line after an aborted run is worse than
+    // the abort, so the stop commands run on this path too.
+    QCOMPARE(engine.phase(), MeasurementEngine::Phase::Aborted);
+    QVERIFY(!sent.empty());
+    QCOMPARE(sent.back(), std::string{":LISN:LINE OFF"});
+}
+
+void EngineRunTest::stopCommandsRunAfterAFailure()
+{
+    MeasurementEngine engine;
+    engine.setDriver(makeDriver());
+
+    // A span the simulated instrument cannot sweep fails the run in phase 1.
+    auto config = makeConfiguration();
+    config.span = FrequencyRange{megahertz(30), gigahertz(9.0)};
+    config.startCommands = {":LISN:LINE L1"};
+    config.stopCommands = {":LISN:LINE OFF"};
+    engine.setConfiguration(config);
+
+    std::vector<std::string> sent;
+    engine.setCommandSender([&sent](const std::string& command) -> Status {
+        sent.push_back(command);
+        return {};
+    });
+
+    QSignalSpy failed{&engine, &MeasurementEngine::runFailed};
+    engine.start();
+
+    QCOMPARE(failed.count(), 1);
+    QCOMPARE(engine.phase(), MeasurementEngine::Phase::Failed);
+    QCOMPARE(sent.back(), std::string{":LISN:LINE OFF"});
+}
+
+void EngineRunTest::aFailingStartCommandStopsTheRun()
+{
+    MeasurementEngine engine;
+    engine.setDriver(makeDriver());
+
+    auto config = makeConfiguration();
+    config.startCommands = {":LISN:LINE L1"};
+    config.stopCommands = {":LISN:LINE OFF"};
+    engine.setConfiguration(config);
+
+    std::vector<std::string> sent;
+    engine.setCommandSender([&sent](const std::string& command) -> Status {
+        sent.push_back(command);
+        if (command == ":LISN:LINE L1") {
+            return fail(ErrorCode::TransportFailure, "the LISN did not answer");
+        }
+        return {};
+    });
+
+    QSignalSpy failed{&engine, &MeasurementEngine::runFailed};
+    QSignalSpy points{&engine, &MeasurementEngine::pointMeasured};
+    engine.start();
+
+    // Measuring with the setup in an unknown state would produce numbers nobody
+    // can defend, so the run does not start -- but the release still runs.
+    QCOMPARE(failed.count(), 1);
+    QCOMPARE(points.count(), 0);
+    QCOMPARE(engine.phase(), MeasurementEngine::Phase::Failed);
+    QCOMPARE(sent, (std::vector<std::string>{":LISN:LINE L1", ":LISN:LINE OFF"}));
+}
+
+void EngineRunTest::commandsNeedSomethingToSendThem()
+{
+    MeasurementEngine engine;
+    engine.setDriver(makeDriver());
+
+    auto config = makeConfiguration();
+    config.startCommands = {":LISN:LINE L1"};
+    engine.setConfiguration(config);
+    // No sender: the run must refuse rather than quietly skip the commands.
+
+    QSignalSpy failed{&engine, &MeasurementEngine::runFailed};
+    engine.start();
+
+    QCOMPARE(failed.count(), 1);
+    QCOMPARE(failed.front().front().value<Error>().code, ErrorCode::NotConnected);
 }
 
 QTEST_APPLESS_MAIN(EngineRunTest)

@@ -27,6 +27,8 @@ namespace {
     session.config.phase1Points = 1001;
     session.config.dwellTime = std::chrono::milliseconds{1500};
     session.config.limits = {*builtInLimitLine("CISPR 32 Class B radiated 10 m (QP)")};
+    session.config.startCommands = {":LISN:LINE L1", ":LISN:CLAMP ON"};
+    session.config.stopCommands = {":LISN:LINE OFF"};
 
     CorrectionTable antenna;
     antenna.name = "biconilog";
@@ -100,6 +102,10 @@ void SessionTest::jsonRoundTripPreservesEverything()
     QCOMPARE(restored->meta.runId, original.meta.runId);
     QCOMPARE(restored->config.span, original.config.span);
     QCOMPARE(restored->config.dwellTime, original.config.dwellTime);
+    // A run is only reproducible if what surrounded it is stored too.
+    QCOMPARE(restored->config.startCommands, original.config.startCommands);
+    QCOMPARE(restored->config.stopCommands, original.config.stopCommands);
+    QCOMPARE(restored->config.commandTimeout, original.config.commandTimeout);
     QCOMPARE(restored->config.limits.size(), 1U);
     QCOMPARE(restored->config.limits.front().name, original.config.limits.front().name);
     QCOMPARE(restored->config.corrections.front().points,

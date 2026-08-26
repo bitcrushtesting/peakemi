@@ -41,6 +41,18 @@ struct RunConfiguration
     /// Override the CISPR-mandated RBW; 0 keeps the mandated value.
     Hertz verificationRbw{0};
 
+    // --- Commands around the run (FR-RUN-9) ---------------------------------
+    /// Sent, in order, once the instrument is ready and before the first sweep.
+    /// This is how a LISN, a relay box or a mast that already speaks SCPI is
+    /// put into the state a run needs: PeakEmi drives no relays itself, it
+    /// forwards what the operator wrote.
+    std::vector<std::string> startCommands;
+    /// Sent when the run ends -- finished, aborted or failed alike -- so the
+    /// setup returns to a safe state even when the run did not get there.
+    std::vector<std::string> stopCommands;
+    /// How long to wait for each of those commands.
+    std::chrono::milliseconds commandTimeout{5000};
+
     // --- Run policy ---------------------------------------------------------
     int passes{1};     ///< max-hold passes over the whole loop (FR-RUN-8)
     int maxRetries{2}; ///< bounded retry on instrument errors (FR-RUN-7)

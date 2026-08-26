@@ -12,8 +12,10 @@
   `CancelToken`.
 * **HAL (`peakemi_hal`)** — SCPI parsing helpers, TCP and serial transports, driver
   registry with scored `*IDN?` matching, LAN sweep and serial port enumeration.
-* **Drivers (`peakemi_drivers`)** — deterministic `SimulatedDriver`, generic SCPI driver
-  with Siglent SSA/SVA and Rigol DSA profiles.
+* **Drivers (`peakemi_drivers`)** — deterministic `SimulatedDriver`, and a SCPI driver
+  with per-model profiles for the Siglent SSA3000X and SVA1000X and the Rigol DSA700 and
+  DSA800 families: each model's frequency range, point count, bandwidths and dialect,
+  narrowed from the family defaults as soon as the instrument identifies itself.
 * **Engine** — two-phase scan → detect → verify state machine on a worker thread, with
   pause/resume/abort, bounded retries, multi-pass max-hold and autosave.
 * **Transports (M5)** — VXI-11 over ONC-RPC including the portmapper lookup, USBTMC over
@@ -43,12 +45,11 @@
 
 ## Next
 
-* **M5 remainder** — drivers for more instrument families; the transports themselves are
-  done.
 * **M8** — a notarised macOS release (the disk image, its icon, the bundle layout and
   ad-hoc signing are done; a Developer ID identity and notarisation credentials are not
   something the build can supply for itself), code signing for the Windows artifacts, and
   a Windows installer.
-* **Open questions** — plot backend benchmark (Qt Graphs via `QQuickWidget` vs the
-  current QPainter backend), LISN control, minimum Qt version.
-  See [requirements.md §6](docs/requirements.md#6-assumptions-risks--open-questions).
+All three open questions are settled and recorded in
+[requirements.md §6](docs/requirements.md#6-assumptions-risks--open-questions): the
+QPainter plot backend stays, PeakEmi drives no relays and sends operator-supplied commands
+around a run instead, and the minimum Qt version is 6.8.

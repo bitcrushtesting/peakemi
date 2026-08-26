@@ -436,7 +436,7 @@ PUBLIC)`. Includes are always angle-bracket, project-rooted: `#include <peakemi/
 
 | Dependency | Version | Acquisition | Licence | Required |
 |---|---|---|---|---|
-| Qt | ≥ 6.5, dev on 6.10 | `find_package` (system/official installer) | LGPL-3.0 | yes |
+| Qt | ≥ 6.8, dev on 6.10 | `find_package` (system/official installer) | LGPL-3.0 | yes |
 | pybind11 | 2.13.x pinned | `FetchContent` | BSD-3 | only with `PEAKEMI_WITH_PYTHON` |
 | CPython | ≥ 3.10 | `find_package(Python3 COMPONENTS Development)` | PSF | only with `PEAKEMI_WITH_PYTHON` |
 | libusb | 1.0.27 | system or `FetchContent` | LGPL-2.1 | only with `PEAKEMI_WITH_USBTMC` |

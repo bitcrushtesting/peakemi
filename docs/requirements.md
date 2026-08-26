@@ -57,7 +57,7 @@ user. No UI element or export path may suppress this notice.
 
 * **Language:** C++23 (no compiler-specific extensions; features must be available in MSVC 2022,
   GCC 13 and Clang 17 — see [architecture.md](architecture.md) §2.2 for the permitted subset).
-* **UI / framework:** Qt 6.5 LTS minimum, developed against Qt 6.10.
+* **UI / framework:** Qt 6.8 minimum, developed against Qt 6.10.
 * **Charting:** the plotting layer MUST be isolated behind an internal interface so the backend
   (Qt Graphs via `QQuickWidget`, QCustomPlot, Qt Charts) can be substituted without touching
   application logic. Backend selection is an open question — see §6.
@@ -243,6 +243,13 @@ The core feature is a two-phase scan:
   a stored configuration against the same instrument MUST require no manual reconfiguration.
 * **FR-RUN-7** If the instrument reports an error or the transport drops, the run MUST stop with
   a clear diagnosis; automatic retry is limited to a configurable, bounded number of attempts.
+* **FR-RUN-9 Commands around a run.** A run configuration MAY carry operator-supplied
+  commands sent over the instrument connection: one set once the instrument is ready and
+  before the first sweep, another when the run ends. The second set MUST be sent whether
+  the run finished, was aborted or failed, so equipment is released even when the run did
+  not complete. PeakEmi MUST NOT interpret these commands, and MUST NOT itself model
+  LISNs, relays or masts. A failure of a start command MUST stop the run: measuring with
+  the setup in an unknown state produces numbers that cannot be defended.
 * **FR-RUN-8** Optional maximum-hold / multiple-pass modes (N passes, keep worst case per point)
   for capturing intermittent emissions.
 
@@ -359,9 +366,17 @@ The core feature is a two-phase scan:
 **Open questions**
 1. Which instruments constitute the v1 supported set (proposal: Siglent SSA3000X/SVA1000X, Rigol
    DSA800/DSA700, plus the simulated driver)?
-2. Plot backend: Qt Graphs 2D is QML-only (no widget wrapper as of Qt 6.10), so it requires a
-   `QQuickWidget` host. Is that acceptable, or is the QPainter-based QCustomPlot the safer v1
-   choice? — to be settled by a benchmark spike before the UI milestone
-   (see [architecture.md](architecture.md) §7.1).
-3. Should conducted-emission LISN control (relay switching of line/neutral) be in v1?
-4. Minimum Qt version: hold at 6.5 LTS or require 6.8+ for newer Graphs features?
+2. ~~Plot backend: Qt Graphs 2D via a `QQuickWidget` host, or a QPainter-based widget?~~
+   **Settled: QPainter.** The plot decimates a trace to a min/max envelope per pixel
+   column, so redraw cost follows the widget width rather than the trace length, and a
+   40,001-point trace stays interactive without a QML runtime in the process. The backend
+   stays behind `IPlotBackend` (ADR-5), so this can be revisited without touching
+   application code.
+3. ~~Should conducted-emission LISN control (relay switching of line/neutral) be in v1?~~
+   **Settled: no.** PeakEmi drives no relays. Instead a run may carry user-supplied
+   commands sent at its start and at its end (FR-RUN-9), which is enough to switch a LISN,
+   a relay box or an antenna mast that already speaks SCPI, without PeakEmi modelling any
+   of them.
+4. ~~Minimum Qt version: hold at 6.5 LTS or require 6.8+?~~ **Settled: 6.8 minimum.** CI
+   builds against it, so code that needs something newer fails there rather than in a
+   user's build.

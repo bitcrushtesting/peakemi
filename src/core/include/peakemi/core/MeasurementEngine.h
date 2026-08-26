@@ -14,6 +14,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <vector>
 
@@ -52,8 +53,19 @@ public:
     explicit MeasurementEngine(QObject* parent = nullptr);
     ~MeasurementEngine() override;
 
+    /// Sends one operator-supplied command and reports what happened.
+    ///
+    /// The engine does not know how to reach auxiliary equipment and does not
+    /// want to: whoever owns the transport supplies this, and the engine only
+    /// decides when the commands are sent and what a failure means.
+    using CommandSender = std::function<Status(const std::string& command)>;
+
     /// Both are read only while the engine is idle.
     void setDriver(DriverPtr driver);
+
+    /// Without a sender, a configuration carrying commands fails the run rather
+    /// than starting a measurement whose setup was never switched.
+    void setCommandSender(CommandSender sender);
     void setConfiguration(RunConfiguration config);
     void setSessionMeta(SessionMeta meta);
 
@@ -81,6 +93,10 @@ signals:
     void logMessage(QString message);
 
 private:
+    /// Send the start or stop hooks, in order.
+    [[nodiscard]] Status sendCommands(const std::vector<std::string>& commands,
+                                      std::string_view phase);
+
     /// @return false when the run must stop (abort requested).
     [[nodiscard]] bool waitWhilePaused();
     [[nodiscard]] bool shouldStop() const;
@@ -93,6 +109,7 @@ private:
     void autosave(const Session& session);
 
     DriverPtr m_driver;
+    CommandSender m_commandSender;
     RunConfiguration m_config;
     SessionMeta m_meta;
     LimitEvaluator m_evaluator;

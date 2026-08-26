@@ -5,7 +5,7 @@ include_guard(GLOBAL)
 include(FetchContent)
 
 # --- Qt ---------------------------------------------------------------------
-set(PEAKEMI_QT_MIN_VERSION 6.5)
+set(PEAKEMI_QT_MIN_VERSION 6.8)
 set(PEAKEMI_QT_COMPONENTS Core Gui Widgets Network SerialPort Concurrent PrintSupport Svg)
 if(PEAKEMI_BUILD_TESTS)
     list(APPEND PEAKEMI_QT_COMPONENTS Test)

@@ -1,6 +1,8 @@
 #include "ScriptedTransport.h"
 #include "TestSupport.h"
 
+#include <peakemi/core/CisprBands.h>
+#include <peakemi/drivers/InstrumentProfiles.h>
 #include <peakemi/drivers/ScpiAnalyzerDriver.h>
 #include <peakemi/drivers/SimulatedDriver.h>
 
@@ -26,6 +28,11 @@ private slots:
     void scpiDriverParsesTheTrace();
     void scpiDriverReportsTransportFailures();
     void scpiDriverDrainsTheErrorQueue();
+    void profilesCoverTheSupportedModels();
+    void profilesAreSelectedByModel();
+    void profilesFallBackToTheFamily();
+    void driverNarrowsItsCapabilitiesAfterIdentifying();
+    void siglentDoesNotSendAFixedPointCount();
 };
 
 void DriversTest::simulatedDriverIsDeterministic()
@@ -246,6 +253,127 @@ void DriversTest::scpiDriverDrainsTheErrorQueue()
     const auto errors = driver->lastErrors();
     QCOMPARE(errors.size(), 16U); // the scripted instrument never clears its queue
     QCOMPARE(errors.front().code, -113);
+}
+
+void DriversTest::profilesCoverTheSupportedModels()
+{
+    // Every profile must be usable: a range that makes sense, bandwidths the
+    // CISPR bands need, and the detectors a pre-compliance run uses.
+    const auto profiles = drivers::instrumentProfiles();
+    QVERIFY(profiles.size() >= 11);
+
+    for (const auto& profile : profiles) {
+        QVERIFY2(profile.capabilities.range.isValid(), profile.name.c_str());
+        QVERIFY2(!profile.models.empty(), profile.name.c_str());
+        QVERIFY2(profile.capabilities.supports(Detector::QuasiPeak), profile.name.c_str());
+        QVERIFY2(profile.capabilities.nativeUnit == AmplitudeUnit::dBuV, profile.name.c_str());
+
+        // The bandwidths CISPR 16-1-1 mandates for the bands the instrument
+        // covers have to be available exactly, or a Phase 2 dwell would be
+        // measured at the wrong bandwidth and the numbers would not mean what
+        // the report says they mean.
+        for (const auto& band : cisprBands()) {
+            if (band.range.start >= profile.capabilities.range.stop) {
+                continue;
+            }
+            const auto nearest =
+                profile.capabilities.nearestResolutionBandwidth(band.resolutionBandwidth);
+            QVERIFY2(nearest == band.resolutionBandwidth,
+                     (profile.name + " lacks the CISPR bandwidth " +
+                      std::to_string(band.resolutionBandwidth.value()) + " Hz")
+                         .c_str());
+        }
+    }
+}
+
+void DriversTest::profilesAreSelectedByModel()
+{
+    const auto ssa3032 = drivers::profileFor("Siglent Technologies", "SSA3032X");
+    QVERIFY(ssa3032.has_value());
+    QCOMPARE(ssa3032->capabilities.range.stop, gigahertz(3.2));
+    QCOMPARE(ssa3032->capabilities.maximumPoints, 751);
+
+    // The same family, a different ceiling.
+    QCOMPARE(drivers::profileFor("Siglent", "SSA3021X")->capabilities.range.stop, gigahertz(2.1));
+    QCOMPARE(drivers::profileFor("Siglent", "SSA3075X")->capabilities.range.stop, gigahertz(7.5));
+
+    // The tracking-generator variants are the same instrument for our purposes.
+    QVERIFY(drivers::profileFor("Siglent", "SSA3032X-TG").has_value());
+
+    QCOMPARE(drivers::profileFor("Rigol Technologies", "DSA815")->capabilities.range.stop,
+             gigahertz(1.5));
+    QCOMPARE(drivers::profileFor("Rigol", "DSA875")->capabilities.range.stop, gigahertz(7.5));
+    QCOMPARE(drivers::profileFor("Rigol", "DSA705")->capabilities.range.stop, megahertz(500));
+    // Rigol's point count is settable, Siglent's is not.
+    QCOMPARE(drivers::profileFor("Rigol", "DSA832")->capabilities.maximumPoints, 3001);
+
+    QVERIFY(!drivers::profileFor("Keysight", "N9000A").has_value());
+    QVERIFY(!drivers::profileFor("Siglent", "SDS1104X").has_value());
+}
+
+void DriversTest::profilesFallBackToTheFamily()
+{
+    // Before *IDN? answers, the driver assumes the widest member of the family:
+    // assuming less would reject spans the instrument actually supports.
+    const auto siglent = drivers::familyProfile("Siglent");
+    QCOMPARE(siglent.capabilities.range.stop, gigahertz(7.5));
+    QCOMPARE(siglent.dialect.traceQuery, std::string{":TRACe:DATA? 1"});
+
+    const auto rigol = drivers::familyProfile("Rigol");
+    QCOMPARE(rigol.capabilities.range.stop, gigahertz(7.5));
+    QCOMPARE(rigol.dialect.traceQuery, std::string{":TRACe:DATA? TRACE1"});
+}
+
+void DriversTest::driverNarrowsItsCapabilitiesAfterIdentifying()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "Rigol Technologies,DSA815,DSA8A1234,1.16");
+
+    auto driver = drivers::makeRigolDsaDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    // The family default spans the whole DSA range; a 7 GHz sweep is plausible
+    // until the instrument says it is a DSA815.
+    SweepParams wide;
+    wide.span = FrequencyRange{megahertz(30), gigahertz(3.0)};
+    wide.points = 601;
+    QVERIFY(driver->capabilities().validate(wide).has_value());
+
+    const auto identity = driver->identify();
+    QVERIFY(identity.has_value());
+    QCOMPARE(identity->model, std::string{"DSA815"});
+
+    // Now the driver knows better, and refuses the same sweep with a reason.
+    const auto rejected = driver->capabilities().validate(wide);
+    QVERIFY(!rejected.has_value());
+    QCOMPARE(rejected.error().code, ErrorCode::UnsupportedSetting);
+    QVERIFY(rejected.error().detail.find("instrument range") != std::string::npos);
+
+    SweepParams within = wide;
+    within.span = FrequencyRange{megahertz(30), gigahertz(1.4)};
+    QVERIFY(driver->capabilities().validate(within).has_value());
+}
+
+void DriversTest::siglentDoesNotSendAFixedPointCount()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "Siglent Technologies,SSA3032X,SSA3XABC,1.2.9.5");
+    transport->setResponse("*OPC?", "1");
+
+    auto driver = drivers::makeSiglentSsaDriver();
+    QVERIFY(driver->open(transport).has_value());
+    QVERIFY(driver->identify().has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(30), gigahertz(1.0)};
+    params.points = 751;
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    // The SSA3000X returns 751 points and refuses to be told otherwise, so the
+    // driver must not send the command at all.
+    QVERIFY(!transport->sawCommandStartingWith(":SENSe:SWEep:POINts"));
+    QVERIFY(transport->sawCommandStartingWith(":TRACe:DATA? 1") ||
+            transport->sawCommandStartingWith(":SENSe:FREQuency:STARt"));
 }
 
 QTEST_APPLESS_MAIN(DriversTest)
