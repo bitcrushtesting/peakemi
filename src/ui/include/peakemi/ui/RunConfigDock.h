@@ -9,6 +9,7 @@ class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
 class QListWidget;
+class QPlainTextEdit;
 class QSpinBox;
 
 namespace peakemi::ui {
@@ -63,6 +64,9 @@ private:
     QDoubleSpinBox* m_verificationSpan{nullptr};
     QSpinBox* m_passes{nullptr};
     QDoubleSpinBox* m_marginalThreshold{nullptr};
+
+    QPlainTextEdit* m_startCommands{nullptr};
+    QPlainTextEdit* m_stopCommands{nullptr};
 
     QListWidget* m_limits{nullptr};
     QListWidget* m_corrections{nullptr};

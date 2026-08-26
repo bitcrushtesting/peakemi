@@ -13,6 +13,7 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
@@ -46,6 +47,30 @@ void selectDetector(QComboBox* combo, Detector detector)
     if (index >= 0) {
         combo->setCurrentIndex(index);
     }
+}
+
+/// One command per line, blank lines ignored.
+[[nodiscard]] std::vector<std::string> commandsFrom(const QPlainTextEdit* editor)
+{
+    std::vector<std::string> commands;
+    const auto lines = editor->toPlainText().split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+    for (const auto& line : lines) {
+        const auto trimmed = line.trimmed();
+        if (!trimmed.isEmpty()) {
+            commands.push_back(trimmed.toStdString());
+        }
+    }
+    return commands;
+}
+
+[[nodiscard]] QString joinCommands(const std::vector<std::string>& commands)
+{
+    QStringList lines;
+    lines.reserve(static_cast<qsizetype>(commands.size()));
+    for (const auto& command : commands) {
+        lines.append(QString::fromStdString(command));
+    }
+    return lines.join(QLatin1Char('\n'));
 }
 
 [[nodiscard]] QString describeBandwidth(Hertz bandwidth)
@@ -173,6 +198,34 @@ void RunConfigDock::buildWidgets()
     dwellForm->addRow(tr("Marginal below"), m_marginalThreshold);
     outer->addWidget(dwellGroup);
 
+    // --- Commands around the run -------------------------------------------
+    auto* commandGroup = new QGroupBox{tr("Commands around the run"), content};
+    auto* commandLayout = new QVBoxLayout{commandGroup};
+
+    auto* commandHint = new QLabel{
+        tr("Sent over the instrument connection, one per line: at the start once the "
+           "instrument is ready, and at the end whether the run finished, was aborted or "
+           "failed. Use them to switch a LISN, a relay box or a mast that speaks SCPI. "
+           "PeakEmi does not drive relays itself and does not interpret these commands."),
+        commandGroup};
+    commandHint->setWordWrap(true);
+    commandLayout->addWidget(commandHint);
+
+    commandLayout->addWidget(new QLabel{tr("At run start"), commandGroup});
+    m_startCommands = new QPlainTextEdit{commandGroup};
+    m_startCommands->setObjectName(QStringLiteral("startCommands"));
+    m_startCommands->setPlaceholderText(QStringLiteral(":LISN:LINE L1"));
+    m_startCommands->setMaximumHeight(72);
+    commandLayout->addWidget(m_startCommands);
+
+    commandLayout->addWidget(new QLabel{tr("At run end"), commandGroup});
+    m_stopCommands = new QPlainTextEdit{commandGroup};
+    m_stopCommands->setObjectName(QStringLiteral("stopCommands"));
+    m_stopCommands->setPlaceholderText(QStringLiteral(":LISN:LINE OFF"));
+    m_stopCommands->setMaximumHeight(72);
+    commandLayout->addWidget(m_stopCommands);
+    outer->addWidget(commandGroup);
+
     // --- Limits and corrections --------------------------------------------
     auto* limitGroup = new QGroupBox{tr("Limit lines"), content};
     auto* limitLayout = new QVBoxLayout{limitGroup};
@@ -226,6 +279,8 @@ void RunConfigDock::buildWidgets()
     connect(m_verificationSpan, &QDoubleSpinBox::valueChanged, this, notify);
     connect(m_passes, &QSpinBox::valueChanged, this, notify);
     connect(m_marginalThreshold, &QDoubleSpinBox::valueChanged, this, notify);
+    connect(m_startCommands, &QPlainTextEdit::textChanged, this, notify);
+    connect(m_stopCommands, &QPlainTextEdit::textChanged, this, notify);
     connect(m_limits, &QListWidget::itemChanged, this, notify);
     connect(m_corrections, &QListWidget::itemChanged, this, notify);
 }
@@ -278,6 +333,9 @@ RunConfiguration RunConfigDock::configuration() const
     config.passes = m_passes->value();
     config.marginalThresholdDb = m_marginalThreshold->value();
 
+    config.startCommands = commandsFrom(m_startCommands);
+    config.stopCommands = commandsFrom(m_stopCommands);
+
     config.limits = selectedLimits();
     config.corrections = m_correctionTables;
     for (int row = 0;
@@ -313,6 +371,8 @@ void RunConfigDock::setConfiguration(const RunConfiguration& config)
     m_verificationSpan->setValue(static_cast<double>(config.verificationSpan.value()) / 1000.0);
     m_passes->setValue(config.passes);
     m_marginalThreshold->setValue(config.marginalThresholdDb);
+    m_startCommands->setPlainText(joinCommands(config.startCommands));
+    m_stopCommands->setPlainText(joinCommands(config.stopCommands));
 
     if (!config.limits.empty()) {
         for (const auto& limit : config.limits) {

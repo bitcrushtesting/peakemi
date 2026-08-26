@@ -1,9 +1,11 @@
 peakemi_add_module(drivers
     SOURCES
         BuiltInDrivers.cpp
+        scpi/InstrumentProfiles.cpp
         scpi/ScpiAnalyzerDriver.cpp
         simulated/SimulatedDriver.cpp
     HEADERS
+        include/peakemi/drivers/InstrumentProfiles.h
         include/peakemi/drivers/ScpiAnalyzerDriver.h
         include/peakemi/drivers/SimulatedDriver.h
     PUBLIC
