@@ -20,7 +20,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
 | Status | Early development — core, HAL, engine, UI and reporting in place (milestones M0–M4, M6 partial) |
 | Language | C++23, Qt 6.5+ (developed on 6.10) |
 | Platforms | Windows 10/11, Linux (Ubuntu 22.04+), macOS 13+ |
-| Docs | [Requirements](docs/requirements.md) · [Architecture](docs/architecture.md) · [Tasklist](tasklist.md) |
+| Docs | [Contributing](CONTRIBUTING.md) · [Requirements](docs/requirements.md) · [Architecture](docs/architecture.md) · [Tasklist](tasklist.md) |
 
 ## Screenshots
 
@@ -114,66 +114,6 @@ The application binary lands in `build/<preset>/bin/`.
 | `PEAKEMI_ENABLE_SANITIZERS` | `OFF` | ASan + UBSan |
 | `PEAKEMI_ENABLE_COVERAGE` | `OFF` | Coverage instrumentation (GCC/Clang) |
 
-## Releases
-
-Tagging a commit on `main` with `vMAJOR.MINOR.PATCH` builds, tests and publishes an AppImage,
-a macOS `.dmg` and a Windows zip as a GitHub release:
-
-```bash
-# bump project(VERSION ...) in CMakeLists.txt first — the workflow verifies it matches
-git tag -a v0.2.0 -m "PeakEmi 0.2.0"
-git push origin v0.2.0
-```
-
-Tags that do not point at a commit on `main`, or whose version disagrees with `CMakeLists.txt`,
-are rejected before anything is built. A tag such as `v0.2.0-rc1` publishes a pre-release.
-
-### Building the macOS disk image by hand
-
-```bash
-cmake --build --preset release --target dmg
-```
-
-This deploys Qt into `PeakEmi.app`, signs it, and writes
-`build/release/PeakEmi-<version>-macos-<arch>.dmg` containing the application, a
-symlink to `/Applications` to drag it onto, and the licence. The image is then mounted and
-the application inside it is launched, so a bundle that still depends on the Qt of the
-machine that built it fails at build time instead of on a user's machine.
-
-The bundle carries its own icon, the example limit lines and correction tables, and the
-`offscreen` platform plugin, so the shipped application can also be scripted without a
-window server.
-
-Signing uses an ad-hoc signature unless you pass a real identity:
-
-```bash
-scripts/macos/make-dmg.sh --app build/release/bin/peakemi.app \
-    --output PeakEmi.dmg --version 0.1.0 --qt-bin "$QT_ROOT_DIR/bin" \
-    --identity "Developer ID Application: Your Name (TEAMID)"
-```
-
-An ad-hoc signature runs on the machine that built it; distributing without a Developer ID
-and notarisation still makes Gatekeeper warn on first launch (milestone M8).
-
-## Repository layout
-
-```
-cmake/          build modules: options, warnings, dependencies, module helper
-docs/           requirements, architecture and the README screenshots
-resources/      example limit lines and correction tables
-src/core/       domain model, limits, corrections, engine, session (no Qt Widgets)
-src/hal/        transports, SCPI helpers, driver registry, discovery
-src/drivers/    simulated driver and the SCPI instrument drivers
-src/reporting/  CSV export and PDF report renderer
-src/ui/         Qt Widgets user interface, plot layer, view models
-src/app/        composition root and main()
-tests/          unit, component and integration tests plus fixtures
-tools/          developer tools (documentation screenshots, PEAKEMI_BUILD_TOOLS=ON)
-```
-
-The `python` module (embedded CPython plugin bridge) lands with milestone M7 —
-see [architecture.md §14](docs/architecture.md#14-implementation-roadmap).
-
 ## Running
 
 ```bash
@@ -185,15 +125,6 @@ see [architecture.md §14](docs/architecture.md#14-implementation-roadmap).
 Connect **Simulated → Simulated Analyzer** in the instrument dock, tick a limit line in
 the run configuration dock and press **Start run** (F5) to see the complete loop without
 any hardware attached. Logs are written to the platform application data directory.
-
-## Code style
-
-* Formatting: `.clang-format` (clang-format ≥ 16). `clang-format -i $(git ls-files '*.cpp' '*.h')`
-* Static analysis: `.clang-tidy`, enabled in the build with `-DPEAKEMI_ENABLE_CLANG_TIDY=ON`
-* Editor defaults: `.editorconfig`
-* Includes are project-rooted: `#include <peakemi/core/Version.h>`
-* Private members use the `m_` prefix; namespaces are lower case, types `CamelCase`, functions
-  `camelBack`
 
 ## Licence
 
