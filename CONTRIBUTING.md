@@ -110,7 +110,7 @@ Signing uses an ad-hoc signature unless you pass a real identity:
 
 ```bash
 scripts/macos/make-dmg.sh --app build/release/bin/peakemi.app \
-    --output PeakEmi.dmg --version 0.1.0 --qt-bin "$QT_ROOT_DIR/bin" \
+    --output PeakEmi.dmg --version 0.2.0 --qt-bin "$QT_ROOT_DIR/bin" \
     --identity "Developer ID Application: Your Name (TEAMID)"
 ```
 

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(PeakEmi
-    VERSION      0.1.0
+    VERSION      0.2.0
     DESCRIPTION  "Cross-platform EMI pre-compliance measurement suite"
     HOMEPAGE_URL "https://github.com/bitcrushtesting/peakemi"
     LANGUAGES    CXX)
