@@ -4,6 +4,7 @@
 #include <peakemi/core/MeasurementEngine.h>
 #include <peakemi/core/PeakDetector.h>
 #include <peakemi/core/Session.h>
+#include <peakemi/python/PluginRegistry.h>
 
 #include <QMainWindow>
 #include <QString>
@@ -52,6 +53,7 @@ private slots:
     void exportResultsCsv();
     void exportResultsJson();
     void editReportTemplate();
+    void showPluginManager();
     void exportTraceCsv();
     void exportPlotImage();
     void exportPdfReport();
@@ -116,6 +118,7 @@ private:
     QAction* m_disconnectAction{nullptr};
     QAction* m_logFrequencyAction{nullptr};
     QAction* m_autoScaleAction{nullptr};
+    QAction* m_pluginManagerAction{nullptr};
     QAction* m_aboutAction{nullptr};
     QAction* m_aboutQtAction{nullptr};
 
@@ -126,6 +129,7 @@ private:
 
     std::vector<PeakCandidate> m_peaks;
     Hertz m_selectedFrequency{0};
+    python::PluginRegistry m_plugins;
     ReportTemplate m_reportTemplate;
     Session m_session;
     QString m_sessionPath;

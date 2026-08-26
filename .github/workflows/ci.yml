@@ -121,7 +121,7 @@ jobs:
           cmake --preset ci -DPEAKEMI_ENABLE_CLANG_TIDY=ON \
             -DPEAKEMI_CLANG_TIDY_EXE=/usr/bin/clang-tidy-20 \
             -DPEAKEMI_WARNINGS_AS_ERRORS=OFF -DPEAKEMI_BUILD_TOOLS=ON \
-            -DPEAKEMI_WITH_USBTMC=ON -DPEAKEMI_WITH_VISA=ON
+            -DPEAKEMI_WITH_USBTMC=ON -DPEAKEMI_WITH_VISA=ON -DPEAKEMI_WITH_PYTHON=ON
 
       - name: Build with clang-tidy
         run: cmake --build --preset ci

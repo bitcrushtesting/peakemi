@@ -3,6 +3,7 @@
 add_subdirectory(core)
 add_subdirectory(hal)
 add_subdirectory(drivers)
+add_subdirectory(python)
 add_subdirectory(reporting)
 add_subdirectory(ui)
 add_subdirectory(app)
