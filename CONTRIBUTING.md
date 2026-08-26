@@ -14,11 +14,13 @@ the module boundaries and the decisions behind them.
 ```
 cmake/          build modules: options, warnings, dependencies, module helper
 docs/           requirements, architecture and the README screenshots
+plugins/        the worked example driver plugin
 resources/      example limit lines and correction tables
 src/core/       domain model, limits, corrections, engine, session (no Qt Widgets)
 src/hal/        transports, SCPI helpers, driver registry, discovery
 src/drivers/    simulated driver and the SCPI instrument drivers
-src/reporting/  CSV export and PDF report renderer
+src/python/     embedded CPython bridge, plugin discovery and trust store
+src/reporting/  CSV/JSON export and PDF report renderer
 src/ui/         Qt Widgets user interface, plot layer, view models
 src/app/        composition root and main()
 tests/          unit, component and integration tests plus fixtures

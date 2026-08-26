@@ -29,6 +29,9 @@ public:
 
     void setConnected(bool connected);
 
+    /// Re-read the driver registry, after plugins were loaded or revoked.
+    void refreshDrivers();
+
 signals:
     /// An empty driver id means "let the registry decide from *IDN?".
     void connectRequested(peakemi::TransportDescriptor descriptor, QString driverId);
@@ -50,7 +53,6 @@ private:
     [[nodiscard]] QTreeWidgetItem* categoryItem(const QString& name);
     void addInstrument(const hal::DiscoveredInstrument& instrument, const QString& category);
     void removeInstrument(const QString& address);
-    void populateDrivers();
 
     QTreeWidget* m_tree{nullptr};
     QComboBox* m_driverOverride{nullptr};

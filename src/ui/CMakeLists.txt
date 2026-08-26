@@ -1,6 +1,7 @@
 peakemi_add_module(ui
     QT_AUTOMOC
     SOURCES
+        dialogs/PluginManagerDialog.cpp
         dialogs/ReportTemplateDialog.cpp
         docks/InstrumentDock.cpp
         docks/LogDock.cpp
@@ -16,6 +17,7 @@ peakemi_add_module(ui
         include/peakemi/ui/LogDock.h
         include/peakemi/ui/MainWindow.h
         include/peakemi/ui/PainterPlotBackend.h
+        include/peakemi/ui/PluginManagerDialog.h
         include/peakemi/ui/ReportTemplateDialog.h
         include/peakemi/ui/ResultsDock.h
         include/peakemi/ui/ResultsTableModel.h
@@ -25,6 +27,7 @@ peakemi_add_module(ui
         peakemi::core
         peakemi::hal
         peakemi::drivers
+        peakemi::python
         peakemi::reporting
         Qt6::Widgets
         Qt6::Svg)

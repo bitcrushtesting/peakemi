@@ -145,7 +145,7 @@ InstrumentDock::InstrumentDock(QWidget* parent) : QDockWidget{tr("Instruments"),
         m_usb->start();
     }
 
-    populateDrivers();
+    refreshDrivers();
 
     // The simulated instrument is always available: a new user can complete a
     // run without owning any hardware (FR-HAL-7, NFR-UX-1).
@@ -216,13 +216,17 @@ InstrumentDock::~InstrumentDock()
     m_discoveryThread->wait();
 }
 
-void InstrumentDock::populateDrivers()
+void InstrumentDock::refreshDrivers()
 {
+    const auto previous = m_driverOverride->currentData().toString();
     m_driverOverride->clear();
     m_driverOverride->addItem(tr("Automatic (match on *IDN?)"), QString{});
     for (const auto& driver : hal::DriverRegistry::instance().drivers()) {
         m_driverOverride->addItem(QString::fromStdString(driver.name),
                                   QString::fromStdString(driver.id));
+    }
+    if (const int index = m_driverOverride->findData(previous); index >= 0) {
+        m_driverOverride->setCurrentIndex(index);
     }
 }
 

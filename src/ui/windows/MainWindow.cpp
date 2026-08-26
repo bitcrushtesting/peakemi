@@ -18,6 +18,7 @@
 #include <peakemi/ui/LogDock.h>
 #include <peakemi/ui/MainWindow.h>
 #include <peakemi/ui/PainterPlotBackend.h>
+#include <peakemi/ui/PluginManagerDialog.h>
 #include <peakemi/ui/ReportTemplateDialog.h>
 #include <peakemi/ui/ResultsDock.h>
 #include <peakemi/ui/RunConfigDock.h>
@@ -163,6 +164,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow{parent}
                                         .arg(qs(amplitudeUnitKey(AmplitudeUnit::dBuV))));
         });
 
+    // Approved plugins contribute drivers before the first connection attempt.
+    if (python::PluginRegistry::isSupported()) {
+        m_plugins.rescan();
+        m_plugins.publishToDriverRegistry();
+        const auto loaded = std::count_if(m_plugins.plugins().begin(),
+                                          m_plugins.plugins().end(),
+                                          [](const python::DiscoveredPlugin& plugin) {
+                                              return plugin.state == python::PluginState::Loaded;
+                                          });
+        if (loaded > 0) {
+            log(tr("%n driver plugin(s) loaded.", nullptr, static_cast<int>(loaded)));
+        }
+    }
+
     m_session.config = m_configDock->configuration();
     m_controller->setConfiguration(m_session.config);
     updateActionStates();
@@ -271,6 +286,10 @@ void MainWindow::createActions()
     m_autoScaleAction->setShortcut(QKeySequence{Qt::Key_Home});
     connect(m_autoScaleAction, &QAction::triggered, this, [this] { m_plot->autoScale(); });
 
+    m_pluginManagerAction = new QAction{tr("Manage driver &plugins…"), this};
+    m_pluginManagerAction->setObjectName(QStringLiteral("actionPluginManager"));
+    connect(m_pluginManagerAction, &QAction::triggered, this, &MainWindow::showPluginManager);
+
     m_aboutAction = new QAction{tr("&About PeakEmi"), this};
     m_aboutAction->setObjectName(QStringLiteral("actionAbout"));
     m_aboutAction->setMenuRole(QAction::AboutRole);
@@ -307,6 +326,8 @@ void MainWindow::createMenus()
     runMenu->addAction(m_abortAction);
     runMenu->addSeparator();
     runMenu->addAction(m_disconnectAction);
+    runMenu->addSeparator();
+    runMenu->addAction(m_pluginManagerAction);
 
     auto* viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(m_logFrequencyAction);
@@ -1008,6 +1029,16 @@ bool MainWindow::confirmDiscardChanges()
         return saveSession();
     }
     return true;
+}
+
+void MainWindow::showPluginManager()
+{
+    PluginManagerDialog dialog{m_plugins, this};
+    dialog.exec();
+
+    // The dock lists the drivers the registry knows, which the dialog may have
+    // just changed.
+    m_instrumentDock->refreshDrivers();
 }
 
 void MainWindow::showAboutDialog()

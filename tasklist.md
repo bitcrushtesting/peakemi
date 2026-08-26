@@ -33,6 +33,11 @@
 * **Release** — tag-triggered workflow that verifies the tag sits on `main` and matches
   `project(VERSION ...)`, then builds and publishes an AppImage, a macOS `.dmg` and a
   Windows zip.
+* **Python bridge (M7)** — embedded CPython through pybind11, the `peakemi_plugin`
+  bindings, discovery with a SHA-256 trust store that requires explicit per-file
+  approval, a driver proxy turning plugin exceptions into errors with their traceback,
+  the plugin manager UI, a worked example driver and the versioned
+  [plugin API specification](docs/plugin-api.md).
 * **Documentation** — README screenshots generated headlessly from the real main window
   by `tools/screenshots` (`PEAKEMI_BUILD_TOOLS=ON`).
 
@@ -40,8 +45,6 @@
 
 * **M5 remainder** — drivers for more instrument families; the transports themselves are
   done.
-* **M7** — embedded Python bridge: bindings, plugin discovery and trust store, plugin
-  manager UI, example plugin.
 * **M8** — a notarised macOS release (the disk image, its icon, the bundle layout and
   ad-hoc signing are done; a Developer ID identity and notarisation credentials are not
   something the build can supply for itself), code signing for the Windows artifacts, and
