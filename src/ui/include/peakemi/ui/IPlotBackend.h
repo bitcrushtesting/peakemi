@@ -8,12 +8,14 @@
 #include <QString>
 #include <QVector>
 
+#include <cstdint>
+
 class QWidget;
 
 namespace peakemi::ui {
 
 /// How a series is drawn. The backend picks the concrete pen.
-enum class PlotStyle
+enum class PlotStyle : std::uint8_t
 {
     Line,
     Dashed,
