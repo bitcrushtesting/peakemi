@@ -133,11 +133,14 @@ jobs:
 
       - name: Package disk image (macOS)
         if: runner.os == 'macOS'
+        # The dmg target deploys Qt into the bundle, signs it, builds the image
+        # and then mounts it and launches the application inside it. A bundle
+        # that only works on the machine that built it fails here rather than in
+        # someone's Downloads folder.
         run: |
           set -euo pipefail
-          app="build/release/bin/peakemi.app"
-          "${QT_ROOT_DIR}/bin/macdeployqt" "${app}" -dmg
-          mv "build/release/bin/peakemi.dmg" "${{ matrix.artifact }}"
+          cmake --build --preset release --target dmg
+          mv build/release/PeakEmi-*-macos-*.dmg "${{ matrix.artifact }}"
 
       - name: Package archive (Windows)
         if: runner.os == 'Windows'
