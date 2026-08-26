@@ -38,6 +38,13 @@ peakemi_add_test(drivers
     SOURCES DriversTest.cpp
     LIBS    peakemi::drivers)
 
+peakemi_add_test(plugins
+    SOURCES PluginTest.cpp
+    LIBS    peakemi::python)
+# The test drives the shipped example plugin, so it needs to know where it is.
+target_compile_definitions(test_plugins PRIVATE
+    PEAKEMI_EXAMPLE_PLUGIN="${PROJECT_SOURCE_DIR}/plugins/drivers/example_sweeper.py")
+
 peakemi_add_test(reporting
     SOURCES ReportingTest.cpp
     LIBS    peakemi::reporting nlohmann_json::nlohmann_json)
