@@ -55,14 +55,39 @@ if(PEAKEMI_WITH_PYTHON)
 endif()
 
 # --- Optional: libusb for the USBTMC transport ------------------------------
+# pkg-config finds it on Linux; Windows and a stock macOS have no pkg-config at
+# all, so fall back to searching for the header and the library directly. Either
+# way the rest of the build sees one target: peakemi::libusb.
 if(PEAKEMI_WITH_USBTMC)
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
-        pkg_check_modules(LIBUSB IMPORTED_TARGET libusb-1.0)
+        pkg_check_modules(LIBUSB QUIET IMPORTED_TARGET libusb-1.0)
     endif()
-    if(NOT TARGET PkgConfig::LIBUSB)
-        message(FATAL_ERROR
-            "PEAKEMI_WITH_USBTMC=ON but libusb-1.0 was not found. "
-            "Install libusb (brew install libusb / apt install libusb-1.0-0-dev) or set the option OFF.")
+
+    if(TARGET PkgConfig::LIBUSB)
+        add_library(peakemi_libusb INTERFACE)
+        target_link_libraries(peakemi_libusb INTERFACE PkgConfig::LIBUSB)
+        message(STATUS "libusb: ${LIBUSB_VERSION} (pkg-config)")
+    else()
+        find_path(PEAKEMI_LIBUSB_INCLUDE_DIR
+            NAMES libusb.h
+            PATH_SUFFIXES libusb-1.0)
+        find_library(PEAKEMI_LIBUSB_LIBRARY NAMES usb-1.0 libusb-1.0)
+
+        if(NOT PEAKEMI_LIBUSB_INCLUDE_DIR OR NOT PEAKEMI_LIBUSB_LIBRARY)
+            message(FATAL_ERROR
+                "PEAKEMI_WITH_USBTMC=ON but libusb-1.0 was not found.\n"
+                "  Linux:   apt install libusb-1.0-0-dev\n"
+                "  macOS:   brew install libusb\n"
+                "  Windows: vcpkg install libusb, then pass CMAKE_TOOLCHAIN_FILE\n"
+                "Or set -DPEAKEMI_WITH_USBTMC=OFF.")
+        endif()
+
+        add_library(peakemi_libusb INTERFACE)
+        target_include_directories(peakemi_libusb SYSTEM INTERFACE "${PEAKEMI_LIBUSB_INCLUDE_DIR}")
+        target_link_libraries(peakemi_libusb INTERFACE "${PEAKEMI_LIBUSB_LIBRARY}")
+        message(STATUS "libusb: ${PEAKEMI_LIBUSB_LIBRARY}")
     endif()
+
+    add_library(peakemi::libusb ALIAS peakemi_libusb)
 endif()

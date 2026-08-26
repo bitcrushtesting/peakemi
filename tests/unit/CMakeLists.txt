@@ -26,6 +26,14 @@ peakemi_add_test(scpi
     SOURCES ScpiTest.cpp
     LIBS    peakemi::hal)
 
+peakemi_add_test(usbtmc
+    SOURCES UsbTmcTest.cpp
+    LIBS    peakemi::hal)
+
+peakemi_add_test(vxi11
+    SOURCES Vxi11Test.cpp
+    LIBS    peakemi::hal)
+
 peakemi_add_test(drivers
     SOURCES DriversTest.cpp
     LIBS    peakemi::drivers)
