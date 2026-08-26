@@ -403,7 +403,19 @@ void Vxi11Test::transportTalksToAFakeInstrument()
     QVERIFY(transport.isOpen());
 
     QVERIFY(transport.write("*IDN?").has_value());
-    QTRY_COMPARE(instrument.received(), QByteArray{"*IDN?\n"});
+
+    // Not QTRY_COMPARE: its expansion converts a chrono duration to int, which
+    // GCC rejects under -Wconversion in the Qt version CI builds against.
+    constexpr int PollIntervalMs = 10;
+    constexpr int MaximumWaitMs = 3000;
+    QByteArray received;
+    for (int waited = 0; waited < MaximumWaitMs && received.isEmpty(); waited += PollIntervalMs) {
+        received = instrument.received();
+        if (received.isEmpty()) {
+            QTest::qWait(PollIntervalMs);
+        }
+    }
+    QCOMPARE(received, QByteArray{"*IDN?\n"});
 
     const CancelToken cancel;
     const auto response = transport.read(std::chrono::milliseconds{3000}, cancel);
