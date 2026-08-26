@@ -11,8 +11,10 @@ namespace peakemi::ui {
 
 /// Table model over the Phase 2 results (FR-VIS-4, FR-DAT-1).
 ///
-/// Verdict colouring lives in the model's BackgroundRole so the view stays a
-/// plain QTableView and sorting/filtering works through a proxy.
+/// Verdict colouring lives in the model's Background and Foreground roles so
+/// the view stays a plain QTableView and sorting/filtering works through a
+/// proxy. Both colours are picked for the active colour scheme: a background
+/// chosen for a light theme leaves the text unreadable on a dark one.
 class ResultsTableModel : public QAbstractTableModel
 {
     Q_OBJECT
@@ -54,7 +56,14 @@ public:
 
     [[nodiscard]] const MeasurementPoint* pointAt(int row) const;
 
+protected:
+    /// Watches the application for theme changes; see refreshColours().
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
 private:
+    /// Repaint the verdict colours after a theme change.
+    void refreshColours();
+
     std::vector<MeasurementPoint> m_points;
 };
 

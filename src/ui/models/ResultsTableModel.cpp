@@ -3,6 +3,10 @@
 
 #include <QBrush>
 #include <QColor>
+#include <QEvent>
+#include <QGuiApplication>
+#include <QPalette>
+#include <QStyleHints>
 
 #include <algorithm>
 #include <cmath>
@@ -44,18 +48,47 @@ namespace {
     return {};
 }
 
-[[nodiscard]] QColor verdictColour(Verdict verdict)
+/// Background and text for one verdict.
+///
+/// Both are stated, and both depend on the colour scheme. Setting only the
+/// background is what made the table unreadable in dark mode: the pale tints
+/// stayed while the theme's text turned near-white, leaving pale text on a pale
+/// row. A verdict has to be readable at a glance -- it is the column an
+/// operator scans -- so neither colour is left to chance.
+struct VerdictColours
 {
+    QColor background;
+    QColor text;
+};
+
+/// Whether rows are painted on a dark background.
+///
+/// The palette is the thing that gets painted, so it is the thing to ask. The
+/// colour-scheme hint answers a related but different question -- what the
+/// system prefers -- and says nothing about an application palette set by a
+/// stylesheet, by a command line switch, or by a screenshot tool.
+[[nodiscard]] bool isDarkScheme()
+{
+    return QGuiApplication::palette().color(QPalette::Base).lightness() < 128;
+}
+
+[[nodiscard]] VerdictColours verdictColours(Verdict verdict)
+{
+    const bool dark = isDarkScheme();
     switch (verdict) {
         case Verdict::Pass:
-            return QColor{0xE6, 0xF4, 0xEA};
+            return dark ? VerdictColours{QColor{0x15, 0x30, 0x1E}, QColor{0xA8, 0xE6, 0xBC}}
+                        : VerdictColours{QColor{0xE6, 0xF4, 0xEA}, QColor{0x0B, 0x40, 0x1E}};
         case Verdict::Marginal:
-            return QColor{0xFE, 0xF7, 0xE0};
+            return dark ? VerdictColours{QColor{0x3A, 0x30, 0x0E}, QColor{0xF7, 0xD9, 0x7A}}
+                        : VerdictColours{QColor{0xFE, 0xF7, 0xE0}, QColor{0x5F, 0x45, 0x00}};
         case Verdict::Fail:
-            return QColor{0xFC, 0xE8, 0xE6};
+            return dark ? VerdictColours{QColor{0x40, 0x1A, 0x18}, QColor{0xFF, 0xA9, 0xA0}}
+                        : VerdictColours{QColor{0xFC, 0xE8, 0xE6}, QColor{0x7A, 0x1A, 0x12}};
         case Verdict::Unknown:
             break;
     }
+    // No verdict: the row keeps the theme's own colours.
     return {};
 }
 
@@ -66,7 +99,36 @@ namespace {
 
 } // namespace
 
-ResultsTableModel::ResultsTableModel(QObject* parent) : QAbstractTableModel{parent} {}
+ResultsTableModel::ResultsTableModel(QObject* parent) : QAbstractTableModel{parent}
+{
+    // A table already on screen has to be repainted when the theme changes,
+    // rather than waiting for the next measurement to redraw it.
+    connect(QGuiApplication::styleHints(),
+            &QStyleHints::colorSchemeChanged,
+            this,
+            [this](Qt::ColorScheme) { refreshColours(); });
+    qApp->installEventFilter(this);
+}
+
+bool ResultsTableModel::eventFilter(QObject* watched, QEvent* event)
+{
+    // The palette can change without the colour scheme changing, so both are
+    // watched: a stylesheet or a theme switch repaints the verdict columns.
+    if (event->type() == QEvent::ApplicationPaletteChange) {
+        refreshColours();
+    }
+    return QAbstractTableModel::eventFilter(watched, event);
+}
+
+void ResultsTableModel::refreshColours()
+{
+    if (m_points.empty()) {
+        return;
+    }
+    emit dataChanged(index(0, 0),
+                     index(static_cast<int>(m_points.size()) - 1, ColumnCount - 1),
+                     {Qt::BackgroundRole, Qt::ForegroundRole});
+}
 
 int ResultsTableModel::rowCount(const QModelIndex& parent) const
 {
@@ -99,8 +161,13 @@ QVariant ResultsTableModel::data(const QModelIndex& index, int role) const
     }
 
     if (role == Qt::BackgroundRole) {
-        const QColor colour = verdictColour(point->verdict);
-        return colour.isValid() ? QBrush{colour} : QVariant{};
+        const auto colours = verdictColours(point->verdict);
+        return colours.background.isValid() ? QBrush{colours.background} : QVariant{};
+    }
+
+    if (role == Qt::ForegroundRole) {
+        const auto colours = verdictColours(point->verdict);
+        return colours.text.isValid() ? QBrush{colours.text} : QVariant{};
     }
 
     if (role == Qt::TextAlignmentRole && index.column() != VerdictColumn &&
