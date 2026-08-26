@@ -1,13 +1,18 @@
 peakemi_add_module(reporting
     SOURCES
         writers/CsvExporter.cpp
+        writers/JsonExporter.cpp
+        writers/ReportTemplateIo.cpp
         writers/PdfReportRenderer.cpp
     HEADERS
         include/peakemi/reporting/CsvExporter.h
+        include/peakemi/reporting/JsonExporter.h
+        include/peakemi/reporting/ReportTemplateIo.h
         include/peakemi/reporting/PdfReportRenderer.h
     PUBLIC
         peakemi::core
         Qt6::Core
         Qt6::Gui
     PRIVATE
-        Qt6::PrintSupport)
+        Qt6::PrintSupport
+        nlohmann_json::nlohmann_json)

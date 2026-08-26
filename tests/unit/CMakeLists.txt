@@ -40,7 +40,7 @@ peakemi_add_test(drivers
 
 peakemi_add_test(reporting
     SOURCES ReportingTest.cpp
-    LIBS    peakemi::reporting)
+    LIBS    peakemi::reporting nlohmann_json::nlohmann_json)
 
 peakemi_add_test(mainwindow
     SOURCES MainWindowTest.cpp

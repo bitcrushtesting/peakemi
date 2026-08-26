@@ -63,12 +63,13 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images
 * **Limits and corrections** — built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
   CSV/JSON import of custom limits and of antenna/cable/gain correction tables
   (see [`resources/`](resources) for the documented file formats).
-* **Sessions and exports** — versioned JSON session container written atomically, CSV
-  export of traces and results, and a PDF report carrying the mandatory pre-compliance
-  disclaimer.
+* **Sessions and exports** — versioned JSON session container written atomically, CSV and
+  JSON export of traces and results, and a PDF report carrying the mandatory
+  pre-compliance disclaimer. Company, address, logo and the free-text sections come from
+  a report template that can be edited in the app, shared as a file and kept as the
+  default.
 
-Not yet implemented: the embedded Python plugin bridge and report templates —
-see [tasklist.md](tasklist.md).
+Not yet implemented: the embedded Python plugin bridge — see [tasklist.md](tasklist.md).
 
 ### Instrument buses
 

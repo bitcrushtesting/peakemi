@@ -19,7 +19,9 @@
 * **Transports (M5)** — VXI-11 over ONC-RPC including the portmapper lookup, USBTMC over
   libusb with USB hotplug discovery, and an optional VISA path resolved at run time. The
   optional buses compile in or out without touching the rest of the tree.
-* **Reporting (`peakemi_reporting`)** — CSV export of traces and results, PDF report.
+* **Reporting (`peakemi_reporting`)** — CSV and JSON export of traces and results, PDF
+  report, and a report template (company, address, logo, free text) that is editable in
+  the UI, importable, exportable and stored as the default for new sessions.
 * **User interface (`peakemi_ui`)** — main window with instrument, configuration, results
   and log/SCPI-console docks, decimating spectrum plot behind `IPlotBackend`, run
   controller owning the acquisition thread, session and export actions.
@@ -38,8 +40,6 @@
 
 * **M5 remainder** — drivers for more instrument families; the transports themselves are
   done.
-* **M6** — report templates (logo, address, free text) with a template editor,
-  JSON export of the result table.
 * **M7** — embedded Python bridge: bindings, plugin discovery and trust store, plugin
   manager UI, example plugin.
 * **M8** — code signing and notarisation for the macOS and Windows artifacts, and a Windows
