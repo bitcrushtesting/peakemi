@@ -4,6 +4,7 @@
 
 #include <QAbstractTableModel>
 
+#include <cstdint>
 #include <vector>
 
 namespace peakemi::ui {
@@ -17,7 +18,7 @@ class ResultsTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    enum Column
+    enum Column : std::uint8_t
     {
         FrequencyColumn = 0,
         LevelColumn,
