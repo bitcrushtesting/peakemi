@@ -11,11 +11,14 @@
 #include <peakemi/hal/VisaTransport.h>
 #include <peakemi/hal/Vxi11Transport.h>
 #include <peakemi/reporting/CsvExporter.h>
+#include <peakemi/reporting/JsonExporter.h>
 #include <peakemi/reporting/PdfReportRenderer.h>
+#include <peakemi/reporting/ReportTemplateIo.h>
 #include <peakemi/ui/InstrumentDock.h>
 #include <peakemi/ui/LogDock.h>
 #include <peakemi/ui/MainWindow.h>
 #include <peakemi/ui/PainterPlotBackend.h>
+#include <peakemi/ui/ReportTemplateDialog.h>
 #include <peakemi/ui/ResultsDock.h>
 #include <peakemi/ui/RunConfigDock.h>
 #include <peakemi/ui/RunController.h>
@@ -119,6 +122,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow{parent}
 
     m_controller = new RunController{this};
     m_session = Session::createNew(std::string{ProjectVersion});
+    m_reportTemplate = reporting::report_template::loadDefault();
 
     m_plot = new PainterPlotBackend{this};
     setCentralWidget(m_plot);
@@ -216,6 +220,14 @@ void MainWindow::createActions()
     m_exportPlotAction->setObjectName(QStringLiteral("actionExportPlot"));
     connect(m_exportPlotAction, &QAction::triggered, this, &MainWindow::exportPlotImage);
 
+    m_exportResultsJsonAction = new QAction{tr("Export results as &JSON…"), this};
+    m_exportResultsJsonAction->setObjectName(QStringLiteral("actionExportResultsJson"));
+    connect(m_exportResultsJsonAction, &QAction::triggered, this, &MainWindow::exportResultsJson);
+
+    m_reportTemplateAction = new QAction{tr("Report &template…"), this};
+    m_reportTemplateAction->setObjectName(QStringLiteral("actionReportTemplate"));
+    connect(m_reportTemplateAction, &QAction::triggered, this, &MainWindow::editReportTemplate);
+
     m_reportAction = new QAction{tr("Generate PDF re&port…"), this};
     m_reportAction->setObjectName(QStringLiteral("actionReport"));
     connect(m_reportAction, &QAction::triggered, this, &MainWindow::exportPdfReport);
@@ -281,8 +293,10 @@ void MainWindow::createMenus()
     fileMenu->addAction(m_metadataAction);
     fileMenu->addSeparator();
     fileMenu->addAction(m_exportResultsAction);
+    fileMenu->addAction(m_exportResultsJsonAction);
     fileMenu->addAction(m_exportTraceAction);
     fileMenu->addAction(m_exportPlotAction);
+    fileMenu->addAction(m_reportTemplateAction);
     fileMenu->addAction(m_reportAction);
     fileMenu->addSeparator();
     fileMenu->addAction(m_quitAction);
@@ -421,6 +435,7 @@ void MainWindow::updateActionStates()
 
     const bool hasResults = !m_session.results.empty();
     m_exportResultsAction->setEnabled(hasResults);
+    m_exportResultsJsonAction->setEnabled(hasResults);
     m_reportAction->setEnabled(hasResults || !m_session.traces.empty());
     m_exportTraceAction->setEnabled(!m_session.traces.empty());
 }
@@ -874,6 +889,41 @@ void MainWindow::exportResultsCsv()
     log(tr("Results exported to %1").arg(path));
 }
 
+void MainWindow::exportResultsJson()
+{
+    const auto path = QFileDialog::getSaveFileName(
+        this, tr("Export results"), QStringLiteral("results.json"), tr("JSON files (*.json)"));
+    if (path.isEmpty()) {
+        return;
+    }
+    m_session.results = m_resultsDock->points();
+    if (auto status = reporting::json_export::writeResults(m_session, path); !status) {
+        QMessageBox::warning(
+            this, tr("Export failed"), QString::fromStdString(status.error().message()));
+        return;
+    }
+    log(tr("Results exported to %1").arg(path));
+}
+
+void MainWindow::editReportTemplate()
+{
+    ReportTemplateDialog dialog{m_reportTemplate, this};
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    m_reportTemplate = dialog.reportTemplate();
+    if (dialog.saveAsDefault()) {
+        if (auto status = reporting::report_template::saveDefault(m_reportTemplate); !status) {
+            QMessageBox::warning(this,
+                                 tr("Cannot save the template"),
+                                 QString::fromStdString(status.error().message()));
+            return;
+        }
+        log(tr("Report template saved as the default."));
+    }
+}
+
 void MainWindow::exportTraceCsv()
 {
     if (m_session.traces.empty()) {
@@ -923,8 +973,13 @@ void MainWindow::exportPdfReport()
     }
 
     m_session.results = m_resultsDock->points();
-    ReportTemplate reportTemplate;
-    reportTemplate.companyName = m_session.meta.company;
+
+    // The session's own company name wins over the stored template, so a report
+    // never claims the wrong organisation just because a default was left over.
+    ReportTemplate reportTemplate = m_reportTemplate;
+    if (!m_session.meta.company.empty()) {
+        reportTemplate.companyName = m_session.meta.company;
+    }
 
     reporting::PdfReportRenderer renderer;
     renderer.setPlotImage(m_plot->renderToImage(QSize{1600, 900}));

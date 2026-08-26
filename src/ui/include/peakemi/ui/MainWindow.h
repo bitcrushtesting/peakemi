@@ -1,5 +1,6 @@
 #pragma once
 
+#include <peakemi/core/IReportRenderer.h>
 #include <peakemi/core/MeasurementEngine.h>
 #include <peakemi/core/PeakDetector.h>
 #include <peakemi/core/Session.h>
@@ -49,6 +50,8 @@ private slots:
     void editSessionMetadata();
 
     void exportResultsCsv();
+    void exportResultsJson();
+    void editReportTemplate();
     void exportTraceCsv();
     void exportPlotImage();
     void exportPdfReport();
@@ -103,6 +106,8 @@ private:
     QAction* m_exportResultsAction{nullptr};
     QAction* m_exportTraceAction{nullptr};
     QAction* m_exportPlotAction{nullptr};
+    QAction* m_exportResultsJsonAction{nullptr};
+    QAction* m_reportTemplateAction{nullptr};
     QAction* m_reportAction{nullptr};
     QAction* m_quitAction{nullptr};
     QAction* m_startAction{nullptr};
@@ -121,6 +126,7 @@ private:
 
     std::vector<PeakCandidate> m_peaks;
     Hertz m_selectedFrequency{0};
+    ReportTemplate m_reportTemplate;
     Session m_session;
     QString m_sessionPath;
     bool m_dirty{false};
