@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QCommandLineOption>
 #include <QCommandLineParser>
+#include <QIcon>
 #include <QStandardPaths>
 #include <QString>
 
@@ -62,6 +63,11 @@ int main(int argc, char* argv[])
     // needs them registered before the first connect().
     peakemi::registerMetaTypes();
     peakemi::drivers::registerBuiltInDrivers();
+
+    // Compiled in rather than loaded from disk, so the icon is there on every
+    // platform and in every packaging of the application. AboutDialog.cpp pulls
+    // the resource into the link.
+    QApplication::setWindowIcon(QIcon{QStringLiteral(":/peakemi/icon.png")});
 
     peakemi::ui::MainWindow window;
     window.show();

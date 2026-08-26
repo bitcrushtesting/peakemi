@@ -71,8 +71,11 @@ green locally. They are worth knowing before you spend a round trip on one:
   releases format differently, and a newer analyser reports different findings; both make
   a formatting job fail on code your editor just formatted.
 * **CI builds against the minimum supported Qt**, not the newest. Code that compiles
-  against a newer Qt locally can still fail there — Qt's own macros differ between
-  versions.
+  against a newer Qt locally can still fail there — Qt's own macros and overload sets
+  differ between versions. A concrete one: the tree is built with
+  `QT_NO_CAST_FROM_ASCII`, and `QString::arg("text")` compiles against Qt 6.10 but not
+  against the 6.8 minimum. Wrap every string literal handed to a Qt API in
+  `QStringLiteral` or `tr()`.
 * **libstdc++ and libc++ disagree about which headers include which.** A translation unit
   that compiles on macOS can fail on Linux for a missing `<cstdint>`. Include what you use.
 

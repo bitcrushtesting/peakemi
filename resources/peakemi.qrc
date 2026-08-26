@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/peakemi">
+        <file alias="icon.png">peakemi.png</file>
+    </qresource>
+</RCC>

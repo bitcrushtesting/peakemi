@@ -1,4 +1,3 @@
-#include <peakemi/core/Disclaimer.h>
 #include <peakemi/core/LimitEvaluator.h>
 #include <peakemi/core/Logging.h>
 #include <peakemi/core/SessionSerializer.h>
@@ -14,6 +13,7 @@
 #include <peakemi/reporting/JsonExporter.h>
 #include <peakemi/reporting/PdfReportRenderer.h>
 #include <peakemi/reporting/ReportTemplateIo.h>
+#include <peakemi/ui/AboutDialog.h>
 #include <peakemi/ui/InstrumentDock.h>
 #include <peakemi/ui/LogDock.h>
 #include <peakemi/ui/MainWindow.h>
@@ -36,6 +36,7 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPalette>
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QSettings>
@@ -77,6 +78,20 @@ namespace {
             return QObject::tr("Aborted");
     }
     return {};
+}
+
+/// Series colours that hold up on both a light and a dark plot background.
+///
+/// The trace and limit colours work on either; the verified-point green does
+/// not, so it is lightened where the background is dark.
+[[nodiscard]] bool onDarkBackground()
+{
+    return QGuiApplication::palette().color(QPalette::Base).lightness() < 128;
+}
+
+[[nodiscard]] QColor verifiedPointColour()
+{
+    return onDarkBackground() ? QColor{0x4C, 0xD9, 0x8C} : QColor{0x0B, 0x80, 0x43};
 }
 
 [[nodiscard]] QVector<QPointF> toPoints(const Trace& trace)
@@ -648,7 +663,7 @@ void MainWindow::onPointMeasured(const MeasurementPoint& point)
     PlotSeries verified;
     verified.id = QStringLiteral("phase2");
     verified.label = tr("Verified points");
-    verified.colour = QColor{0x0B, 0x80, 0x43};
+    verified.colour = verifiedPointColour();
     verified.style = PlotStyle::Points;
     for (const auto& stored : m_resultsDock->points()) {
         verified.points.append(
@@ -1043,12 +1058,8 @@ void MainWindow::showPluginManager()
 
 void MainWindow::showAboutDialog()
 {
-    QMessageBox::about(this,
-                       tr("About PeakEmi"),
-                       tr("<h3>PeakEmi %1</h3>"
-                          "<p>Cross-platform EMI pre-compliance measurement suite.</p>"
-                          "<p>%2</p>")
-                           .arg(qs(ProjectVersion), qs(ComplianceDisclaimer)));
+    AboutDialog dialog{this};
+    dialog.exec();
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)

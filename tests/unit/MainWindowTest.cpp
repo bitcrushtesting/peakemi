@@ -1,22 +1,30 @@
 #include <peakemi/core/MeasurementEngine.h>
 #include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/ui/AboutDialog.h>
 #include <peakemi/ui/InstrumentDock.h>
 #include <peakemi/ui/LogDock.h>
 #include <peakemi/ui/MainWindow.h>
 #include <peakemi/ui/PainterPlotBackend.h>
 #include <peakemi/ui/ResultsDock.h>
+#include <peakemi/ui/ResultsTableModel.h>
 #include <peakemi/ui/RunConfigDock.h>
 
 #include <QApplication>
+#include <QBrush>
 #include <QElapsedTimer>
 #include <QFileInfo>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMenuBar>
+#include <QPalette>
 #include <QPlainTextEdit>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QTableView>
 #include <QTemporaryDir>
 #include <QTest>
+
+#include <cmath>
 
 using namespace peakemi;
 
@@ -36,6 +44,8 @@ private slots:
     void plotExportsImages();
     void plotConvertsCoordinatesBothWays();
     void resultsDockSummarisesVerdicts();
+    void resultsStayReadableInEitherColourScheme();
+    void aboutDialogCreditsLicenceAndSource();
     void logDockEmitsConsoleCommands();
 };
 
@@ -253,6 +263,126 @@ void MainWindowTest::resultsDockSummarisesVerdicts()
 
     dock.clear();
     QCOMPARE(dock.points().size(), 0U);
+}
+
+namespace {
+
+/// WCAG relative luminance, the basis of the contrast ratio below.
+[[nodiscard]] double relativeLuminance(const QColor& colour)
+{
+    const auto channel = [](int value) {
+        const double normalised = value / 255.0;
+        return normalised <= 0.03928 ? normalised / 12.92
+                                     : std::pow((normalised + 0.055) / 1.055, 2.4);
+    };
+    return (0.2126 * channel(colour.red())) + (0.7152 * channel(colour.green())) +
+           (0.0722 * channel(colour.blue()));
+}
+
+/// WCAG contrast ratio, from 1 (identical) to 21 (black on white). The AA
+/// threshold for body text is 4.5.
+[[nodiscard]] double contrastRatio(const QColor& first, const QColor& second)
+{
+    const double a = relativeLuminance(first);
+    const double b = relativeLuminance(second);
+    return (std::max(a, b) + 0.05) / (std::min(a, b) + 0.05);
+}
+
+[[nodiscard]] QPalette schemePalette(bool dark)
+{
+    QPalette palette;
+    const QColor window = dark ? QColor{0x1E, 0x1E, 0x1E} : QColor{0xF2, 0xF2, 0xF2};
+    const QColor base = dark ? QColor{0x14, 0x14, 0x14} : QColor{0xFF, 0xFF, 0xFF};
+    const QColor text = dark ? QColor{0xE6, 0xE6, 0xE6} : QColor{0x1A, 0x1A, 0x1A};
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::Text, text);
+    return palette;
+}
+
+} // namespace
+
+void MainWindowTest::resultsStayReadableInEitherColourScheme()
+{
+    const QPalette original = QApplication::palette();
+    const auto restore = qScopeGuard([&original] { QApplication::setPalette(original); });
+
+    ui::ResultsTableModel model;
+
+    std::vector<MeasurementPoint> points;
+    for (const Verdict verdict : {Verdict::Pass, Verdict::Marginal, Verdict::Fail}) {
+        MeasurementPoint point;
+        point.frequency = megahertz(100);
+        point.correctedAmplitude = 30.0;
+        point.limitValue = 40.0;
+        point.marginDb = 10.0;
+        point.verdict = verdict;
+        points.push_back(point);
+    }
+    model.setPoints(points);
+
+    for (const bool dark : {false, true}) {
+        QApplication::setPalette(schemePalette(dark));
+
+        for (int row = 0; row < model.rowCount(); ++row) {
+            const QModelIndex index = model.index(row, ui::ResultsTableModel::VerdictColumn);
+            const QVariant background = model.data(index, Qt::BackgroundRole);
+            const QVariant foreground = model.data(index, Qt::ForegroundRole);
+            QVERIFY(background.isValid());
+            QVERIFY(foreground.isValid());
+
+            const QColor onColour = foreground.value<QBrush>().color();
+            const QColor behindColour = background.value<QBrush>().color();
+
+            // The bug this guards against: text at light-theme contrast drawn
+            // on a background chosen for the other scheme.
+            const double ratio = contrastRatio(onColour, behindColour);
+            const QByteArray message =
+                QStringLiteral("row %1 in %2 mode: contrast %3")
+                    .arg(row)
+                    .arg(dark ? QStringLiteral("dark") : QStringLiteral("light"))
+                    .arg(ratio)
+                    .toUtf8();
+            QVERIFY2(ratio >= 4.5, message.constData());
+        }
+    }
+}
+
+void MainWindowTest::aboutDialogCreditsLicenceAndSource()
+{
+    const QPalette original = QApplication::palette();
+    const auto restore = qScopeGuard([&original] { QApplication::setPalette(original); });
+
+    for (const bool dark : {false, true}) {
+        QApplication::setPalette(schemePalette(dark));
+
+        ui::AboutDialog dialog;
+
+        QString text;
+        const QList<QLabel*> labels = dialog.findChildren<QLabel*>();
+        for (const QLabel* label : labels) {
+            text += label->text();
+        }
+
+        QVERIFY(text.contains(QStringLiteral("Bitcrush Testing")));
+        QVERIFY(text.contains(QStringLiteral("GPL-3.0-or-later")));
+        QVERIFY(text.contains(ui::AboutDialog::repositoryUrl()));
+        QVERIFY(text.contains(ui::AboutDialog::licenceUrl()));
+        // The disclaimer required by CON-1 stays on the page.
+        QVERIFY(text.contains(QStringLiteral("PRE-COMPLIANCE")));
+
+        // Guards the resource wiring: the icon is compiled into a static
+        // library, and a missing Q_INIT_RESOURCE shows up as a blank label
+        // rather than as a build failure.
+        const auto* icon = dialog.findChild<QLabel*>(QStringLiteral("aboutIcon"));
+        QVERIFY(icon != nullptr);
+        QVERIFY(!icon->pixmap().isNull());
+
+        // A link nobody can read is not a source offer.
+        const QPalette& scheme = dialog.palette();
+        QVERIFY(contrastRatio(scheme.color(QPalette::Link), scheme.color(QPalette::Window)) >= 4.5);
+    }
 }
 
 void MainWindowTest::logDockEmitsConsoleCommands()
