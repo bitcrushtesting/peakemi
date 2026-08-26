@@ -23,8 +23,9 @@ inline constexpr std::uint32_t PortmapProtocolTcp = 6U;
 inline constexpr std::uint32_t CoreProgram = 0x0607AFU;
 inline constexpr std::uint32_t CoreVersion = 1U;
 
-/// Procedures of the VXI-11 core channel.
-enum class CoreProcedure : std::uint32_t
+/// Procedures of the VXI-11 core channel. The wire field is 32 bits wide, but
+/// that conversion happens in encodeCall; the enum only names the values.
+enum class CoreProcedure : std::uint8_t
 {
     CreateLink = 10,
     DeviceWrite = 11,
