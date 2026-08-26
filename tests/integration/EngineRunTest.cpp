@@ -12,6 +12,7 @@
 #include <QTest>
 #include <QThread>
 
+#include <atomic>
 #include <cmath>
 #include <memory>
 
@@ -182,9 +183,19 @@ void EngineRunTest::abortStopsTheRunAndKeepsPartialResults()
     QSignalSpy points{&engine, &MeasurementEngine::pointMeasured};
 
     // Abort from another thread while the engine is dwelling, which is exactly
-    // how the GUI thread's abort button behaves (FR-RUN-5, FR-THR-3).
-    auto* aborter = QThread::create([&engine] {
-        QThread::msleep(600);
+    // how the GUI thread's abort button behaves (FR-RUN-5, FR-THR-3). The
+    // trigger is the first verified point rather than a sleep: a loaded machine
+    // must not decide whether this test exercises an abort mid-run or an abort
+    // after the run already finished.
+    std::atomic_int measured{0};
+    connect(&engine, &MeasurementEngine::pointMeasured, &engine, [&measured] {
+        measured.fetch_add(1);
+    });
+
+    auto* aborter = QThread::create([&engine, &measured] {
+        while (measured.load() == 0 && engine.isRunning()) {
+            QThread::msleep(5);
+        }
         engine.requestAbort();
     });
     aborter->start();
@@ -218,11 +229,32 @@ void EngineRunTest::pauseAndResumeSurviveARun()
     QSignalSpy phases{&engine, &MeasurementEngine::phaseChanged};
     QSignalSpy finished{&engine, &MeasurementEngine::runFinished};
 
-    auto* controller = QThread::create([&engine] {
-        QThread::msleep(400);
+    // The helper thread must never assert: QVERIFY returns from the enclosing
+    // function on failure, and a return here would leave the engine parked on
+    // its condition variable with nobody left to resume it -- a hang, not a
+    // failed test. It records what it saw and always resumes; the assertions
+    // happen on the test thread afterwards.
+    std::atomic_bool reachedPaused{false};
+    auto* controller = QThread::create([&engine, &reachedPaused] {
+        while (!engine.isRunning()) {
+            QThread::msleep(5);
+        }
         engine.requestPause();
-        QThread::msleep(400);
-        QVERIFY(engine.phase() == MeasurementEngine::Phase::Paused);
+
+        // The engine parks at its next checkpoint, which is one dwell away at
+        // most. Wait generously: this is about ordering, not about speed.
+        constexpr int PollIntervalMs = 10;
+        constexpr int MaximumWaitMs = 10000;
+        for (int waited = 0; waited < MaximumWaitMs; waited += PollIntervalMs) {
+            if (engine.phase() == MeasurementEngine::Phase::Paused) {
+                reachedPaused.store(true);
+                break;
+            }
+            if (!engine.isRunning()) {
+                break; // the run ended before the pause could take effect
+            }
+            QThread::msleep(PollIntervalMs);
+        }
         engine.requestResume();
     });
     controller->start();
@@ -231,6 +263,7 @@ void EngineRunTest::pauseAndResumeSurviveARun()
     controller->wait();
     delete controller;
 
+    QVERIFY2(reachedPaused.load(), "the engine never reported the paused phase");
     QCOMPARE(engine.phase(), MeasurementEngine::Phase::Finished);
     QCOMPARE(finished.count(), 1);
 
