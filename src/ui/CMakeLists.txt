@@ -1,6 +1,9 @@
 peakemi_add_module(ui
     QT_AUTOMOC
+    QT_AUTORCC
     SOURCES
+        "${PROJECT_SOURCE_DIR}/resources/peakemi.qrc"
+        dialogs/AboutDialog.cpp
         dialogs/PluginManagerDialog.cpp
         dialogs/ReportTemplateDialog.cpp
         docks/InstrumentDock.cpp
@@ -12,6 +15,7 @@ peakemi_add_module(ui
         plot/PainterPlotBackend.cpp
         windows/MainWindow.cpp
     HEADERS
+        include/peakemi/ui/AboutDialog.h
         include/peakemi/ui/IPlotBackend.h
         include/peakemi/ui/InstrumentDock.h
         include/peakemi/ui/LogDock.h

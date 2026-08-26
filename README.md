@@ -17,7 +17,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
 
 | | |
 |---|---|
-| Status | Early development — the measurement suite, its instrument buses, reporting and the plugin bridge are in place (milestones M0–M7) |
+| Status | Early development: the measurement suite, its instrument buses, reporting and the plugin bridge are in place (milestones M0–M7) |
 | Language | C++23, Qt 6.8+ (developed on 6.10) |
 | Platforms | Windows 10/11, Linux (Ubuntu 22.04+), macOS 13+ |
 | Docs | [Contributing](CONTRIBUTING.md) · [Requirements](docs/requirements.md) · [Architecture](docs/architecture.md) · [Plugin API](docs/plugin-api.md) · [Tasklist](tasklist.md) |
@@ -32,7 +32,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
   instrument cannot make is refused with a reason rather than sent and rejected.
 * **Nothing is hidden.** Every SCPI exchange is visible in the console and in the
   `--verbose` transcript. Limit lines and correction tables are documented CSV/JSON you can
-  write by hand, and sessions are versioned JSON — your measurements stay diffable,
+  write by hand, and sessions are versioned JSON, so your measurements stay diffable,
   scriptable and readable without PeakEmi.
 * **Nothing to plug in to start.** The simulated analyzer ships with the application, so the
   full loop, including the report, can be tried before any hardware is on the bench.
@@ -41,7 +41,7 @@ evaluates traces against CISPR/FCC limit lines and produces reproducible reports
 * **No licence server, no dongle, no seat count.** GPL-3.0-or-later; build it yourself and
   run it offline.
 
-The instrument list is short and the scope is deliberately narrow — pre-compliance
+The instrument list is short and the scope is deliberately narrow: pre-compliance
 measurement, not lab automation. Turntables, masts and LISNs are switched through the
 [commands sent around a run](#what-works-today), not driven by PeakEmi.
 
@@ -58,10 +58,15 @@ verified Phase 2 points. Traces are decimated to a min/max envelope per pixel co
 
 ![Spectrum plot with limit overlay and flagged peaks](docs/images/spectrum-plot.png)
 
-Every verified point lands in the results table with its full provenance — detector, resolution
-bandwidth, dwell time, limit, margin and timestamp — coloured by verdict.
+Every verified point lands in the results table with its full provenance (detector, resolution
+bandwidth, dwell time, limit, margin and timestamp), coloured by verdict.
 
 ![Phase 2 result table](docs/images/results-table.png)
+
+The interface follows the desktop colour scheme, and the verdict colours are chosen per scheme
+so the table stays readable in either:
+
+![Phase 2 result table in dark mode](docs/images/results-table-dark.png)
 
 The log dock keeps the run narrative and the raw SCPI transcript side by side, so what the
 application asked the instrument is always inspectable.
@@ -75,44 +80,45 @@ so they cannot drift from the application:
 cmake --preset debug -DPEAKEMI_BUILD_TOOLS=ON
 cmake --build --preset debug --target peakemi_screenshots
 QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images
+QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images --dark
 ```
 
 ## What works today
 
-* **Two-phase automated run** — fast peak scan, peak flagging against the active limit
+* **Two-phase automated run**: fast peak scan, peak flagging against the active limit
   lines, then a quasi-peak dwell on every flagged peak with the CISPR-mandated RBW.
   Pausable, resumable, abortable, with autosave after every verified point.
-* **Simulated analyzer** — ships with the app, needs no hardware, and produces a
+* **Simulated analyzer**: ships with the app, needs no hardware, and produces a
   deterministic spectrum that fails CISPR 32 class B in a few places, so a new user can
   go from launch to a finished run and a PDF report in a minute.
-* **Instruments** — raw SCPI over TCP, VXI-11, USBTMC and serial, `*IDN?`-scored driver
+* **Instruments**: raw SCPI over TCP, VXI-11, USBTMC and serial, `*IDN?`-scored driver
   selection, bounded and opt-in LAN sweep, live USB hotplug detection, serial port
   enumeration, an optional VISA path, and a raw SCPI console.
-* **Supported analyzers** — Siglent SSA3021X/3032X/3075X and SVA1015X/1032X/1075X, Rigol
+* **Supported analyzers**: Siglent SSA3021X/3032X/3075X and SVA1015X/1032X/1075X, Rigol
   DSA705/710 and DSA815/832/875, each with its own frequency range, point count and
   command dialect.
-* **Python driver plugins** — in a build configured with `PEAKEMI_WITH_PYTHON=ON`, a
+* **Python driver plugins**: in a build configured with `PEAKEMI_WITH_PYTHON=ON`, a
   driver can be a single Python file loaded into the embedded interpreter, and the
   measurement engine cannot tell it from one written in C++. A plugin is
   imported only after you approve it, and the approval is recorded as a hash of the file's
   contents, so an edited plugin is untrusted again until you say otherwise. See the
   [plugin API](docs/plugin-api.md) and the worked
   [example driver](plugins/drivers/example_sweeper.py).
-* **Commands around a run** — a run can send operator-supplied commands when it starts and
+* **Commands around a run**: a run can send operator-supplied commands when it starts and
   when it ends, which is how a LISN, a relay box or a mast that speaks SCPI is switched.
   The closing commands are sent whether the run finished, was aborted or failed. PeakEmi
   drives no relays itself.
-* **Limits and corrections** — built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
+* **Limits and corrections**: built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
   CSV/JSON import of custom limits and of antenna/cable/gain correction tables
   (see [`resources/`](resources) for the documented file formats).
-* **Sessions and exports** — versioned JSON session container written atomically, CSV and
+* **Sessions and exports**: versioned JSON session container written atomically, CSV and
   JSON export of traces and results, and a PDF report carrying the mandatory
   pre-compliance disclaimer. Company, address, logo and the free-text sections come from
   a report template that can be edited in the app, shared as a file and kept as the
   default.
 
 What is left is packaging: a notarised macOS disk image, signed Windows artifacts and a
-Windows installer — see [tasklist.md](tasklist.md).
+Windows installer, see [tasklist.md](tasklist.md).
 
 ### Instrument buses
 
@@ -171,6 +177,6 @@ any hardware attached. Logs are written to the platform application data directo
 
 ## Licence
 
-GPL-3.0-or-later — the full text is in [LICENSE](LICENSE). The plugin API headers are
+GPL-3.0-or-later, the full text is in [LICENSE](LICENSE). The plugin API headers are
 dual-licensed so that proprietary in-house drivers remain possible; see
 [requirements.md §1.4](docs/requirements.md#14-technology-stack-con-3).

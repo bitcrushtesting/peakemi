@@ -14,6 +14,7 @@
 #include <peakemi/core/MeasurementEngine.h>
 #include <peakemi/core/RunConfiguration.h>
 #include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/ui/AboutDialog.h>
 #include <peakemi/ui/InstrumentDock.h>
 #include <peakemi/ui/LogDock.h>
 #include <peakemi/ui/MainWindow.h>
@@ -25,8 +26,11 @@
 #include <QApplication>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QPalette>
 #include <QPixmap>
 #include <QSettings>
+#include <QStringList>
+#include <QStyleHints>
 #include <QTabBar>
 #include <QTextStream>
 
@@ -34,6 +38,36 @@
 #include <functional>
 
 namespace {
+
+/// A dark palette close to what a system dark theme produces, for rendering
+/// the interface the way a dark-mode user sees it.
+[[nodiscard]] QPalette darkPalette()
+{
+    const QColor window{0x1E, 0x1E, 0x1E};
+    const QColor base{0x14, 0x14, 0x14};
+    const QColor text{0xE6, 0xE6, 0xE6};
+    const QColor highlight{0x2D, 0x6C, 0xDF};
+
+    QPalette palette;
+    palette.setColor(QPalette::Window, window);
+    palette.setColor(QPalette::WindowText, text);
+    palette.setColor(QPalette::Base, base);
+    palette.setColor(QPalette::AlternateBase, window);
+    palette.setColor(QPalette::Text, text);
+    palette.setColor(QPalette::Button, window);
+    palette.setColor(QPalette::ButtonText, text);
+    palette.setColor(QPalette::ToolTipBase, base);
+    palette.setColor(QPalette::ToolTipText, text);
+    palette.setColor(QPalette::Highlight, highlight);
+    palette.setColor(QPalette::Link, QColor{0x4D, 0x9B, 0xFF});
+    palette.setColor(QPalette::LinkVisited, QColor{0xB4, 0x8E, 0xFF});
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+    palette.setColor(QPalette::Mid, QColor{0x3A, 0x3A, 0x3A});
+    palette.setColor(QPalette::Shadow, QColor{0x50, 0x50, 0x50});
+    palette.setColor(QPalette::Disabled, QPalette::Text, QColor{0x8A, 0x8A, 0x8A});
+    palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor{0x8A, 0x8A, 0x8A});
+    return palette;
+}
 
 QTextStream& out()
 {
@@ -118,8 +152,24 @@ try {
     peakemi::registerMetaTypes();
     peakemi::drivers::registerBuiltInDrivers();
 
+    // "--dark" renders everything in the dark colour scheme, which is how the
+    // legibility of the plot and the results table there gets checked rather
+    // than assumed.
+    QStringList arguments;
+    for (int i = 1; i < argc; ++i) {
+        arguments.append(QString::fromLocal8Bit(argv[i]));
+    }
+    const bool dark = arguments.removeAll(QStringLiteral("--dark")) > 0;
+    if (dark) {
+        // The hint alone does not repaint anything under the offscreen
+        // platform, which has no system theme to follow, so the palette is set
+        // explicitly. This is also what a user running a dark Qt style has.
+        QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Dark);
+        QApplication::setPalette(darkPalette());
+    }
+
     const QString directory =
-        argc > 1 ? QString::fromLocal8Bit(argv[1]) : QStringLiteral("docs/images");
+        arguments.isEmpty() ? QStringLiteral("docs/images") : arguments.first();
     if (!QDir{}.mkpath(directory)) {
         out() << "cannot create " << directory << Qt::endl;
         return 1;
@@ -172,14 +222,30 @@ try {
     }
     out() << "run finished with " << results->points().size() << " verified point(s)" << Qt::endl;
 
-    bool ok = save(window.grab(), directory + QStringLiteral("/main-window.png"));
-    ok = save(plot->grab(), directory + QStringLiteral("/spectrum-plot.png")) && ok;
-    ok = save(results->grab(), directory + QStringLiteral("/results-table.png")) && ok;
+    const QString suffix = dark ? QStringLiteral("-dark") : QString{};
+    bool ok = save(window.grab(),
+                   directory + QStringLiteral("/main-window") + suffix + QStringLiteral(".png"));
+    ok = save(plot->grab(),
+              directory + QStringLiteral("/spectrum-plot") + suffix + QStringLiteral(".png")) &&
+         ok;
+    ok = save(results->grab(),
+              directory + QStringLiteral("/results-table") + suffix + QStringLiteral(".png")) &&
+         ok;
 
     // Raise the log tab to show the application log and the SCPI console.
     logDock->raise();
     QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-    ok = save(logDock->grab(), directory + QStringLiteral("/log-console.png")) && ok;
+    ok = save(logDock->grab(),
+              directory + QStringLiteral("/log-console") + suffix + QStringLiteral(".png")) &&
+         ok;
+
+    // Grabbed rather than shown: the dialog is modal, so exec() would block.
+    peakemi::ui::AboutDialog about{&window};
+    about.show();
+    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    ok = save(about.grab(),
+              directory + QStringLiteral("/about-dialog") + suffix + QStringLiteral(".png")) &&
+         ok;
 
     return ok ? 0 : 1;
 } catch (const std::exception& error) {
