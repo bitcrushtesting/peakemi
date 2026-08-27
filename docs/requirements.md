@@ -363,20 +363,3 @@ The core feature is a two-phase scan:
 | Quasi-peak dwell makes runs long | Poor UX | Bounded peak counts, pause/resume, progress with time estimate |
 | GPL-3.0 vs proprietary in-house drivers | Adoption friction | Plugin API headers dual-licensed (CON-3) |
 
-**Open questions**
-1. Which instruments constitute the v1 supported set (proposal: Siglent SSA3000X/SVA1000X, Rigol
-   DSA800/DSA700, plus the simulated driver)?
-2. ~~Plot backend: Qt Graphs 2D via a `QQuickWidget` host, or a QPainter-based widget?~~
-   **Settled: QPainter.** The plot decimates a trace to a min/max envelope per pixel
-   column, so redraw cost follows the widget width rather than the trace length, and a
-   40,001-point trace stays interactive without a QML runtime in the process. The backend
-   stays behind `IPlotBackend` (ADR-5), so this can be revisited without touching
-   application code.
-3. ~~Should conducted-emission LISN control (relay switching of line/neutral) be in v1?~~
-   **Settled: no.** PeakEmi drives no relays. Instead a run may carry user-supplied
-   commands sent at its start and at its end (FR-RUN-9), which is enough to switch a LISN,
-   a relay box or an antenna mast that already speaks SCPI, without PeakEmi modelling any
-   of them.
-4. ~~Minimum Qt version: hold at 6.5 LTS or require 6.8+?~~ **Settled: 6.8 minimum.** CI
-   builds against it, so code that needs something newer fails there rather than in a
-   user's build.
