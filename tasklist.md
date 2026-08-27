@@ -1,55 +1,8 @@
 # PeakEmi tasklist
 
-## Done
-
-* **Build system** — CMakeLists (modern C++23, Qt 6), `CMakePresets.json`,
-  `.clang-format`, `.clang-tidy`, `.editorconfig`.
-* **Core domain (`peakemi_core`)** — strong units, traces, capabilities, limit lines and
-  the built-in CISPR/FCC catalogue, correction chain, CISPR band table, peak detection,
-  run configuration with segment planning, session model and versioned JSON container,
-  atomic file writes, categorised + rotating logging.
-* **Ports** — `ITransport` and `AbstractAnalyzerDriver`, error values via `std::expected`,
-  `CancelToken`.
-* **HAL (`peakemi_hal`)** — SCPI parsing helpers, TCP and serial transports, driver
-  registry with scored `*IDN?` matching, LAN sweep and serial port enumeration.
-* **Drivers (`peakemi_drivers`)** — deterministic `SimulatedDriver`, and a SCPI driver
-  with per-model profiles for the Siglent SSA3000X and SVA1000X and the Rigol DSA700 and
-  DSA800 families: each model's frequency range, point count, bandwidths and dialect,
-  narrowed from the family defaults as soon as the instrument identifies itself.
-* **Engine** — two-phase scan → detect → verify state machine on a worker thread, with
-  pause/resume/abort, bounded retries, multi-pass max-hold and autosave.
-* **Transports (M5)** — VXI-11 over ONC-RPC including the portmapper lookup, USBTMC over
-  libusb with USB hotplug discovery, and an optional VISA path resolved at run time. The
-  optional buses compile in or out without touching the rest of the tree.
-* **Reporting (`peakemi_reporting`)** — CSV and JSON export of traces and results, PDF
-  report, and a report template (company, address, logo, free text) that is editable in
-  the UI, importable, exportable and stored as the default for new sessions.
-* **User interface (`peakemi_ui`)** — main window with instrument, configuration, results
-  and log/SCPI-console docks, decimating spectrum plot behind `IPlotBackend`, run
-  controller owning the acquisition thread, session and export actions.
-* **Tests** — 11 Qt Test executables: unit tests for every non-UI algorithm, component
-  tests against a scripted transport, UI smoke tests and a headless integration test of
-  the full two-phase run.
-* **CI** — GitHub Actions matrix (Windows/MSVC, Ubuntu/GCC, macOS/Clang) building with
-  warnings as errors and running the suite headless, plus a format/clang-tidy job.
-* **Release** — tag-triggered workflow that verifies the tag sits on `main` and matches
-  `project(VERSION ...)`, then builds and publishes an AppImage, a macOS `.dmg` and a
-  Windows zip.
-* **Python bridge (M7)** — embedded CPython through pybind11, the `peakemi_plugin`
-  bindings, discovery with a SHA-256 trust store that requires explicit per-file
-  approval, a driver proxy turning plugin exceptions into errors with their traceback,
-  the plugin manager UI, a worked example driver and the versioned
-  [plugin API specification](docs/plugin-api.md).
-* **Documentation** — README screenshots generated headlessly from the real main window
-  by `tools/screenshots` (`PEAKEMI_BUILD_TOOLS=ON`).
-
 ## Next
 
 * **M8** — a notarised macOS release (the disk image, its icon, the bundle layout and
   ad-hoc signing are done; a Developer ID identity and notarisation credentials are not
   something the build can supply for itself), code signing for the Windows artifacts, and
   a Windows installer.
-All three open questions are settled and recorded in
-[requirements.md §6](docs/requirements.md#6-assumptions-risks--open-questions): the
-QPainter plot backend stays, PeakEmi drives no relays and sends operator-supplied commands
-around a run instead, and the minimum Qt version is 6.8.
