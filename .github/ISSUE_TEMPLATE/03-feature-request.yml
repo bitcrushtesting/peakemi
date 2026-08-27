@@ -1,0 +1,40 @@
+name: Feature request
+description: Something PeakEmi should do and does not
+title: "<the capability, in one line>"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check [requirements.md](https://github.com/bitcrushtesting/peakemi/blob/main/docs/requirements.md) first. Some things
+        are deliberately **out of scope for v1**: instrument calibration, turntable/mast/LISN
+        control, site attenuation corrections, immunity (EMS) testing, accredited-lab report
+        formats, and any claim of formal compliance. Asking for one of those is fine, but say
+        why the constraint should change.
+
+        Asking for a new instrument? Use the **Instrument support request** form instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do on the bench, and where does PeakEmi stop you? Describe the
+        measurement, not the feature you have in mind for it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like it to do
+    validations:
+      required: true
+  - type: input
+    id: requirement
+    attributes:
+      label: Related requirement ID, if you know one
+      placeholder: FR-RUN-9
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
+      description: Workarounds, other tools, manual steps.
