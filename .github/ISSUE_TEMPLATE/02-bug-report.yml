@@ -1,0 +1,64 @@
+name: Bug report
+description: Something PeakEmi does wrong
+title: "<what goes wrong, in one line>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A measurement bug and a UI bug need different evidence. If a *number* is wrong,
+        the session file and the SCPI transcript are what settle it; attach them if you can.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: >
+        If it reproduces against the built-in **Simulated Analyzer**, say so: that makes it
+        reproducible by anyone, and fixable without your hardware.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PeakEmi version
+      description: >
+        The first line of the log, e.g. `PeakEmi 0.2.0+3d09efc`, which also names the commit
+        the build came from. Help > About shows the version number alone. "Latest" is not a
+        version, and a build from a shallow clone reports `0.0.0`.
+      placeholder: 0.2.0+3d09efc
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+  - type: input
+    id: instrument
+    attributes:
+      label: Instrument
+      description: Vendor, model and bus, or "simulated" if it happens without hardware.
+      placeholder: Rigol DSA815, LAN raw socket
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log output
+      description: |
+        Run with `--verbose` to capture the full SCPI transcript. Logs are written to the
+        platform application data directory. Redact anything you do not want public.
+      render: text
