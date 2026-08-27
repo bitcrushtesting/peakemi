@@ -1,0 +1,131 @@
+name: Instrument support request
+description: Ask for a spectrum analyzer PeakEmi does not drive yet
+title: "Driver: <vendor> <model>"
+labels: ["driver", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for asking. Please check the
+        [supported analyzers](https://github.com/bitcrushtesting/peakemi#what-works-today)
+        first, and search for an open request for the same model before filing a new one.
+
+        **You may not need us.** A driver can be a single Python file loaded at run time,
+        with no rebuild and no wait for a release: see the
+        [plugin API](https://github.com/bitcrushtesting/peakemi/blob/main/docs/plugin-api.md) and the worked
+        [example driver](https://github.com/bitcrushtesting/peakemi/blob/main/plugins/drivers/example_sweeper.py). That is the
+        fastest route to a working instrument, and a plugin that works is also the best
+        possible basis for a built-in driver.
+
+        The fields below are what a driver actually needs. A request without the `*IDN?`
+        reply and a programming manual cannot be acted on, because there is nothing to
+        match the instrument against and no way to know what to send it.
+  - type: input
+    id: instrument
+    attributes:
+      label: Vendor and model
+      description: As printed on the instrument, including any suffix (-TG, -N, …).
+      placeholder: Siglent SSA3032X-TG
+    validations:
+      required: true
+  - type: textarea
+    id: idn
+    attributes:
+      label: The exact reply to `*IDN?`
+      description: |
+        Copy it verbatim, including the commas. This string is how PeakEmi recognises the
+        instrument and picks its profile, so an approximation is not usable. Any SCPI
+        terminal will do, or PeakEmi's own **raw SCPI console** once connected.
+      placeholder: Siglent Technologies,SSA3032X,SSA3XLBC1R2345,1.2.9.5
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: manual
+    attributes:
+      label: Link to the programming/remote-control manual
+      description: >
+        The SCPI reference, not the user guide. Without it the command dialect has to be
+        guessed, and a guessed dialect is worse than no driver.
+      placeholder: https://…/SSA3000X_ProgrammingGuide_EN.pdf
+    validations:
+      required: true
+  - type: checkboxes
+    id: buses
+    attributes:
+      label: How can the instrument be reached?
+      description: Tick everything the instrument offers.
+      options:
+        - label: LAN, raw SCPI socket (usually port 5025 or 5555)
+        - label: LAN, VXI-11
+        - label: USB (USBTMC)
+        - label: Serial (RS-232)
+        - label: GPIB, via an adapter
+        - label: Not sure
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Capabilities
+      description: |
+        From the datasheet. These become the instrument's profile, and PeakEmi uses them to
+        refuse a sweep the instrument cannot make instead of sending it and having it
+        rejected. Leave anything you do not know blank rather than guessing.
+      value: |
+        Frequency range:            e.g. 9 kHz to 3.2 GHz
+        Sweep points (min/max):     e.g. 751 fixed, or 101 to 3001
+        Resolution bandwidths:      e.g. 1 Hz to 1 MHz in 1-3-10 steps
+        Video bandwidths:
+        Attenuator (min/max/step):  e.g. 0 to 51 dB in 1 dB steps
+        Reference level range:
+        Preamplifier:               yes / no
+        Native amplitude unit:      dBm / dBuV
+    validations:
+      required: true
+  - type: checkboxes
+    id: emi-essentials
+    attributes:
+      label: EMI essentials
+      description: |
+        PeakEmi's second phase dwells on each flagged peak with a quasi-peak detector at the
+        bandwidth CISPR mandates for that band: 200 Hz in band A, 9 kHz in band B, 120 kHz in
+        bands C and D, 1 MHz in band E. An instrument missing these can still be scanned in
+        phase 1, but it cannot verify a peak the way the standard requires, and any driver for
+        it will say so.
+      options:
+        - label: It has a quasi-peak detector
+        - label: It has the CISPR resolution bandwidths (200 Hz, 9 kHz, 120 kHz, 1 MHz)
+        - label: It has an EMI or EMC measurement mode
+        - label: Not sure
+  - type: dropdown
+    id: access
+    attributes:
+      label: Can you test against the real instrument?
+      description: >
+        This is the part nobody else can supply. A driver written from a manual alone is
+        unverified, and an EMI measurement from an unverified driver is worthless.
+      options:
+        - "Yes, I have the instrument and can run test builds against it"
+        - "Yes, but only occasionally"
+        - "No, I do not have access to one"
+    validations:
+      required: true
+  - type: textarea
+    id: transcript
+    attributes:
+      label: SCPI transcript (optional, but it is what turns a request into a driver)
+      description: |
+        Run PeakEmi with `--verbose`, or use the raw SCPI console, and paste what the
+        instrument answers. Useful queries: `*IDN?`, `:SENSe:BANDwidth:RESolution?`,
+        `:SENSe:SWEep:POINts?`, `:SENSe:DETector:FUNCtion?`, `:TRACe:DATA? TRACE1`
+        (the first line is enough), `:SYSTem:ERRor?`.
+
+        A recorded transcript becomes the fixture the driver's test replays, so the driver
+        stays correct without the instrument being present.
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: >
+        Firmware version, known quirks, commands the manual documents but the instrument
+        refuses, whether you intend to open a pull request yourself.

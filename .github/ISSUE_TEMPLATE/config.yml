@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How to write a driver plugin
+    url: https://github.com/bitcrushtesting/peakemi/blob/main/docs/plugin-api.md
+    about: A driver can be a single Python file, with no rebuild and no wait for a release.
+  - name: Building, running and contributing
+    url: https://github.com/bitcrushtesting/peakemi/blob/main/CONTRIBUTING.md
+    about: Repository layout, code style, the test suite, and what CI will catch.
