@@ -402,9 +402,8 @@ int HeadlessRunner::run()
     if (m_transport) {
         // Auxiliary equipment shares the instrument's bus; the engine decides
         // when the operator's commands go out, the transport carries them.
-        auto transport = m_transport;
-        const auto timeout = config->commandTimeout;
-        engine.setCommandSender([transport, timeout](const std::string& command) -> Status {
+        engine.setCommandSender([transport = m_transport, timeout = config->commandTimeout](
+                                    const std::string& command) -> Status {
             if (auto status = transport->write(command); !status) {
                 return status;
             }
