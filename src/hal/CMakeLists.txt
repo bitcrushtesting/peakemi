@@ -8,6 +8,7 @@ peakemi_add_module(hal
         scpi/UsbTmcProtocol.cpp
         transport/SerialScpiTransport.cpp
         transport/TcpScpiTransport.cpp
+        transport/TransportFactory.cpp
         transport/UsbTmcTransport.cpp
         transport/VisaTransport.cpp
         transport/Vxi11Protocol.cpp
@@ -19,6 +20,7 @@ peakemi_add_module(hal
         include/peakemi/hal/Scpi.h
         include/peakemi/hal/SerialScpiTransport.h
         include/peakemi/hal/TcpScpiTransport.h
+        include/peakemi/hal/TransportFactory.h
         include/peakemi/hal/UsbTmcProtocol.h
         include/peakemi/hal/UsbTmcTransport.h
         include/peakemi/hal/VisaTransport.h

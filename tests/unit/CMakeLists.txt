@@ -49,6 +49,10 @@ peakemi_add_test(reporting
     SOURCES ReportingTest.cpp
     LIBS    peakemi::reporting nlohmann_json::nlohmann_json)
 
+peakemi_add_test(commandline
+    SOURCES CommandLineTest.cpp
+    LIBS    peakemi::cli)
+
 peakemi_add_test(mainwindow
     SOURCES MainWindowTest.cpp
     LIBS    peakemi::ui)
