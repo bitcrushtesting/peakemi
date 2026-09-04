@@ -13,6 +13,7 @@
 
 #include <atomic>
 #include <csignal>
+#include <utility>
 
 namespace {
 
@@ -139,7 +140,9 @@ int main(int argc, char* argv[])
             break;
     }
 
-    peakemi::cli::HeadlessRunner runner{parsed->options};
+    // Moved rather than copied: copying the options would be the only thing in
+    // main() able to throw, and there is nothing above main() to catch it.
+    peakemi::cli::HeadlessRunner runner{std::move(parsed->options)};
     runner.setPlotRenderer(&peakemi::ui::renderSessionSpectrum);
 
     std::signal(SIGINT, onTerminationSignal);

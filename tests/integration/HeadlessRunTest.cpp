@@ -17,8 +17,13 @@ using namespace peakemi::cli;
 
 namespace {
 
-/// The name of the built-in limit the simulated bench is designed to fail.
-const auto FailingLimit = QStringLiteral("CISPR 32 Class B radiated 10 m (QP)");
+/// The name of the built-in limit the simulated bench is designed to fail. A
+/// function rather than a namespace-scope QString: that would be a constructor
+/// running before main() with nothing able to catch what it throws.
+[[nodiscard]] QString failingLimit()
+{
+    return QStringLiteral("CISPR 32 Class B radiated 10 m (QP)");
+}
 
 /// A short run against the simulated instrument: both phases, no hardware and
 /// no waiting, which is what a build server can afford to run on every push.
@@ -26,7 +31,7 @@ const auto FailingLimit = QStringLiteral("CISPR 32 Class B radiated 10 m (QP)");
 {
     HeadlessOptions options;
     options.endpoint = TransportDescriptor{.kind = TransportKind::Simulated};
-    options.limits = {FailingLimit};
+    options.limits = {failingLimit()};
     options.start = megahertz(30);
     options.stop = megahertz(200);
     options.points = 2001;
@@ -223,7 +228,7 @@ void HeadlessRunTest::aSessionFileSuppliesTheConfiguration()
     saved.config.phase1Points = 1001;
     saved.config.dwellTime = std::chrono::milliseconds{20};
     saved.config.peaks.maximumCount = 1;
-    saved.config.limits = {*builtInLimitLine(FailingLimit.toStdString())};
+    saved.config.limits = {*builtInLimitLine(failingLimit().toStdString())};
     saved.config.autosave = false;
 
     const auto path = directory.filePath(QStringLiteral("configured.peakemi.json"));

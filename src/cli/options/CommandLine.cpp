@@ -3,6 +3,7 @@
 #include <QCommandLineOption>
 #include <QCommandLineParser>
 #include <QCoreApplication>
+#include <QLatin1StringView>
 #include <QRegularExpression>
 
 #include <cmath>
@@ -13,44 +14,48 @@ namespace {
 
 /// Option names, spelled once. A typo between the definition and the read is
 /// the classic way a command-line option silently stops working.
+///
+/// Latin-1 views over the literals rather than QStrings: an option name is
+/// ASCII by definition, and a namespace-scope QString would be a constructor
+/// running before main() with nothing able to catch what it throws.
 namespace name {
 
-const auto Instrument = QStringLiteral("instrument");
-const auto Driver = QStringLiteral("driver");
-const auto Session = QStringLiteral("session");
-const auto Limit = QStringLiteral("limit");
-const auto Correction = QStringLiteral("correction");
-const auto Start = QStringLiteral("start");
-const auto Stop = QStringLiteral("stop");
-const auto Points = QStringLiteral("points");
-const auto RefLevel = QStringLiteral("ref-level");
-const auto Detector = QStringLiteral("detector");
-const auto Dwell = QStringLiteral("dwell");
-const auto Passes = QStringLiteral("passes");
-const auto MaxPeaks = QStringLiteral("max-peaks");
-const auto Margin = QStringLiteral("margin");
-const auto StartCommand = QStringLiteral("start-command");
-const auto StopCommand = QStringLiteral("stop-command");
-const auto Eut = QStringLiteral("eut");
-const auto EutSerial = QStringLiteral("eut-serial");
-const auto Operator = QStringLiteral("operator");
-const auto Company = QStringLiteral("company");
-const auto Notes = QStringLiteral("notes");
-const auto RunId = QStringLiteral("run-id");
-const auto OutputDir = QStringLiteral("output-dir");
-const auto OutSession = QStringLiteral("out-session");
-const auto OutResultsCsv = QStringLiteral("out-results-csv");
-const auto OutResultsJson = QStringLiteral("out-results-json");
-const auto OutTraceCsv = QStringLiteral("out-trace-csv");
-const auto OutReportPdf = QStringLiteral("out-report-pdf");
-const auto ReportTemplate = QStringLiteral("report-template");
-const auto FailOnOption = QStringLiteral("fail-on");
-const auto Summary = QStringLiteral("summary");
-const auto Quiet = QStringLiteral("quiet");
-const auto Verbose = QStringLiteral("verbose");
-const auto LogDir = QStringLiteral("log-dir");
-const auto ListDrivers = QStringLiteral("list-drivers");
-const auto ListLimits = QStringLiteral("list-limits");
+constexpr auto Instrument = QLatin1StringView{"instrument"};
+constexpr auto Driver = QLatin1StringView{"driver"};
+constexpr auto Session = QLatin1StringView{"session"};
+constexpr auto Limit = QLatin1StringView{"limit"};
+constexpr auto Correction = QLatin1StringView{"correction"};
+constexpr auto Start = QLatin1StringView{"start"};
+constexpr auto Stop = QLatin1StringView{"stop"};
+constexpr auto Points = QLatin1StringView{"points"};
+constexpr auto RefLevel = QLatin1StringView{"ref-level"};
+constexpr auto Detector = QLatin1StringView{"detector"};
+constexpr auto Dwell = QLatin1StringView{"dwell"};
+constexpr auto Passes = QLatin1StringView{"passes"};
+constexpr auto MaxPeaks = QLatin1StringView{"max-peaks"};
+constexpr auto Margin = QLatin1StringView{"margin"};
+constexpr auto StartCommand = QLatin1StringView{"start-command"};
+constexpr auto StopCommand = QLatin1StringView{"stop-command"};
+constexpr auto Eut = QLatin1StringView{"eut"};
+constexpr auto EutSerial = QLatin1StringView{"eut-serial"};
+constexpr auto Operator = QLatin1StringView{"operator"};
+constexpr auto Company = QLatin1StringView{"company"};
+constexpr auto Notes = QLatin1StringView{"notes"};
+constexpr auto RunId = QLatin1StringView{"run-id"};
+constexpr auto OutputDir = QLatin1StringView{"output-dir"};
+constexpr auto OutSession = QLatin1StringView{"out-session"};
+constexpr auto OutResultsCsv = QLatin1StringView{"out-results-csv"};
+constexpr auto OutResultsJson = QLatin1StringView{"out-results-json"};
+constexpr auto OutTraceCsv = QLatin1StringView{"out-trace-csv"};
+constexpr auto OutReportPdf = QLatin1StringView{"out-report-pdf"};
+constexpr auto ReportTemplate = QLatin1StringView{"report-template"};
+constexpr auto FailOnOption = QLatin1StringView{"fail-on"};
+constexpr auto Summary = QLatin1StringView{"summary"};
+constexpr auto Quiet = QLatin1StringView{"quiet"};
+constexpr auto Verbose = QLatin1StringView{"verbose"};
+constexpr auto LogDir = QLatin1StringView{"log-dir"};
+constexpr auto ListDrivers = QLatin1StringView{"list-drivers"};
+constexpr auto ListLimits = QLatin1StringView{"list-limits"};
 
 } // namespace name
 
@@ -108,7 +113,7 @@ Result<Hertz> parseFrequency(const QString& text)
     if (suffix == QStringLiteral("g")) {
         return gigahertz(value);
     }
-    return Hertz{static_cast<std::int64_t>(value + 0.5)};
+    return Hertz{static_cast<std::int64_t>(std::llround(value))};
 }
 
 Result<std::chrono::milliseconds> parseDuration(const QString& text)
@@ -131,7 +136,8 @@ Result<std::chrono::milliseconds> parseDuration(const QString& text)
     if (milliseconds <= 0.0) {
         return usage(QStringLiteral("'%1' is not a positive duration").arg(text));
     }
-    return std::chrono::milliseconds{static_cast<std::int64_t>(milliseconds + 0.5)};
+    return std::chrono::milliseconds{
+        static_cast<std::chrono::milliseconds::rep>(std::llround(milliseconds))};
 }
 
 Result<TransportDescriptor> parseEndpoint(const QString& text)
@@ -425,7 +431,7 @@ Result<CommandLine> parseCommandLine(const QStringList& arguments)
                                         "average, rms or sample")
                              .arg(parser.value(name::Detector)));
         }
-        out.verificationDetector = *detector;
+        out.verificationDetector = detector;
     }
 
     for (const auto& command : parser.values(name::StartCommand)) {
