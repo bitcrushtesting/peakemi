@@ -224,7 +224,7 @@ answering, and a pipeline treats them differently.
 | `1` | The run finished and the verdict is worse than that |
 | `2` | The command line, a limit file or the requested span was wrong; nothing was measured |
 | `3` | The run could not be completed: the instrument, the transport or an output file failed |
-| `4` | The run was cancelled (SIGINT/SIGTERM); the stop commands still went out |
+| `4` | The run was cancelled (SIGINT/SIGTERM); a run already under way still sent its stop commands |
 
 `--fail-on marginal` also fails the job for points inside the marginal band, and
 `--fail-on never` reduces the exit code to "did the run complete".
