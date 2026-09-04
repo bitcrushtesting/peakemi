@@ -153,9 +153,14 @@ jobs:
           $stage = "stage/PeakEmi"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item build/release/bin/peakemi.exe $stage
+          Copy-Item build/release/bin/peakemi-cli.exe $stage
           Copy-Item README.md, tasklist.md, LICENSE $stage
           Copy-Item -Recurse resources $stage/resources
+          # Both binaries, into the same directory: windeployqt is run for each
+          # so the console tool gets the Qt libraries it needs of its own, and
+          # the second pass simply finds most of them already there.
           & "$env:QT_ROOT_DIR/bin/windeployqt.exe" --release --no-compiler-runtime "$stage/peakemi.exe"
+          & "$env:QT_ROOT_DIR/bin/windeployqt.exe" --release --no-compiler-runtime "$stage/peakemi-cli.exe"
           Compress-Archive -Path $stage -DestinationPath "${{ matrix.artifact }}"
 
       - name: Upload artifact

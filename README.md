@@ -111,6 +111,12 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images --da
 * **Limits and corrections**: built-in CISPR 32 / EN 55032 and FCC Part 15 B catalogue,
   CSV/JSON import of custom limits and of antenna/cable/gain correction tables
   (see [`resources/`](resources) for the documented file formats).
+* **Headless runs for CI**: `peakemi-cli` performs the same measurement from a build
+  script, with no display and no window system, and reports the verdict as its exit code —
+  0 within the limits, 1 outside them. It writes the session, the CSV and JSON result
+  tables and the PDF report, and a `--summary json` block for whatever reads the job's
+  output. A run can be configured entirely on the command line or taken from a session
+  saved in the application.
 * **Sessions and exports**: versioned JSON session container written atomically, CSV and
   JSON export of traces and results, and a PDF report carrying the mandatory
   pre-compliance disclaimer. Company, address, logo and the free-text sections come from
@@ -147,7 +153,8 @@ ctest --preset debug          # run the tests
 Available configure presets: `debug`, `release`, `relwithdebinfo`, `dev` (sanitizers + clang-tidy
 + warnings-as-errors) and `ci`. The whole CI flow is `cmake --workflow --preset ci`.
 
-The application binary lands in `build/<preset>/bin/`.
+Both binaries land in `build/<preset>/bin/`: `peakemi`, the application, and `peakemi-cli`,
+the headless runner.
 
 ### Build options
 
@@ -174,6 +181,91 @@ The application binary lands in `build/<preset>/bin/`.
 Connect **Simulated → Simulated Analyzer** in the instrument dock, tick a limit line in
 the run configuration dock and press **Start run** (F5) to see the complete loop without
 any hardware attached. Logs are written to the platform application data directory.
+
+## Headless runs and CI
+
+`peakemi-cli` is the same measurement suite without the window. It needs no display — it
+asks Qt for the offscreen platform plugin unless you have chosen one — so it runs on a
+build agent, in a container or over SSH.
+
+```bash
+peakemi-cli \
+  --limit "CISPR 32 Class B radiated 10 m (QP)" \
+  --correction resources/corrections/example-antenna-factor.csv \
+  --start 30M --stop 1G --points 4001 --dwell 1s \
+  --eut "Widget rev C" --operator "$USER" \
+  --output-dir artefacts
+```
+
+That run uses the simulated analyzer, so it works on a machine with nothing attached. Point
+it at real hardware with `--instrument`:
+
+| Endpoint | Meaning |
+|---|---|
+| `sim` | The built-in simulated analyzer (the default) |
+| `tcp:192.168.1.20` · `tcp:192.168.1.20:5555` | Raw SCPI over TCP, port 5025 unless given |
+| `vxi11:10.0.0.5` | VXI-11, port found through the portmapper |
+| `serial:/dev/ttyUSB0:115200` | Serial, baud rate optional |
+| `usbtmc:RESOURCE` · `visa:RESOURCE` | USBTMC and VISA resource strings, taken verbatim |
+
+The driver is chosen by scoring the instrument's `*IDN?` reply, or named outright with
+`--driver`; `--list-drivers` and `--list-limits` print what this build has. `--help` lists
+every option.
+
+### Exit codes
+
+The exit code is the point of the whole thing, so it distinguishes a result from a broken
+job — an emission over the limit is not the same event as an instrument that stopped
+answering, and a pipeline treats them differently.
+
+| Code | Meaning |
+|---|---|
+| `0` | The run finished and the verdict is within what `--fail-on` allows |
+| `1` | The run finished and the verdict is worse than that |
+| `2` | The command line, a limit file or the requested span was wrong; nothing was measured |
+| `3` | The run could not be completed: the instrument, the transport or an output file failed |
+| `4` | The run was cancelled (SIGINT/SIGTERM); the stop commands still went out |
+
+`--fail-on marginal` also fails the job for points inside the marginal band, and
+`--fail-on never` reduces the exit code to "did the run complete".
+
+### Artefacts
+
+`--output-dir` writes five files under fixed names — `session.peakemi.json`, `results.csv`,
+`results.json`, `trace.csv` and `report.pdf` — so a job can archive the directory without
+knowing the generated run id. Name them individually with `--out-session`,
+`--out-results-csv`, `--out-results-json`, `--out-trace-csv` and `--out-report-pdf`. The
+session is autosaved after every verified point, so a job killed mid-run still leaves the
+points it had already verified.
+
+### In a pipeline
+
+```yaml
+- name: EMI pre-compliance scan
+  run: |
+    peakemi-cli --quiet --summary json \
+      --instrument tcp:192.168.1.20 \
+      --limit "CISPR 32 Class B radiated 10 m (QP)" \
+      --correction antenna-factor.csv \
+      --start 30M --stop 1G --dwell 1s \
+      --eut "$GITHUB_REPOSITORY" --run-id "$GITHUB_RUN_ID" \
+      --output-dir emi-artefacts | tee emi-summary.json
+
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: emi-artefacts
+    path: emi-artefacts/
+```
+
+A configuration worked out interactively can be reused instead of restated: save the
+session in the application and pass it as `--session run.peakemi.json`. Any option given
+alongside it amends what the file says, and options left out leave it alone.
+
+Where to find `peakemi-cli` in a release: beside the application in the Windows archive,
+inside `PeakEmi.app/Contents/MacOS/` in the macOS disk image, and at `usr/bin/peakemi-cli`
+inside the Linux AppImage (`./PeakEmi.AppImage --appimage-extract`). Building from source
+installs both binaries into `bin/`.
 
 ## Licence
 

@@ -72,6 +72,54 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: cmake --workflow --preset ${{ matrix.preset }}
 
+      # The headless runner is the interface a build server uses, so CI drives
+      # the binary it just built the way a pipeline would: a simulated run whose
+      # spectrum is known to fail CISPR 32 class B must exit 1 and leave every
+      # artefact behind. A run that exits 0 here means the exit-code contract
+      # broke, which no unit test can catch from inside the process.
+      - name: Headless smoke run
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set -euo pipefail
+          cli=build/ci/bin/peakemi-cli
+          [ -x "$cli" ] || cli=build/ci/bin/peakemi-cli.exe
+
+          code=0
+          "$cli" --quiet --summary json \
+            --limit "CISPR 32 Class B radiated 10 m (QP)" \
+            --correction resources/corrections/example-antenna-factor.csv \
+            --start 30M --stop 200M --points 2001 --dwell 20ms --max-peaks 3 \
+            --eut "CI smoke run" --run-id "ci-${GITHUB_RUN_ID}" \
+            --output-dir headless-artefacts > headless-summary.json || code=$?
+
+          if [ "$code" -ne 1 ]; then
+            echo "::error::expected exit code 1 for a failing EUT, got ${code}"
+            cat headless-summary.json || true
+            exit 1
+          fi
+          for artefact in session.peakemi.json results.csv results.json trace.csv report.pdf; do
+            test -s "headless-artefacts/${artefact}" \
+              || { echo "::error::missing ${artefact}"; exit 1; }
+          done
+          grep -q '"runId": "ci-'"${GITHUB_RUN_ID}"'"' headless-summary.json
+
+          # --fail-on never asks a different question of the same measurement.
+          "$cli" --quiet --fail-on never \
+            --limit "CISPR 32 Class B radiated 10 m (QP)" \
+            --start 30M --stop 60M --points 501 --dwell 20ms --max-peaks 1 > /dev/null
+
+      - name: Upload headless artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-artefacts-${{ runner.os }}
+          path: |
+            headless-artefacts/
+            headless-summary.json
+          if-no-files-found: ignore
+
       - name: Upload test output on failure
         if: failure()
         uses: actions/upload-artifact@v4
