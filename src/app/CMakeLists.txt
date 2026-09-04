@@ -8,6 +8,29 @@ target_link_libraries(peakemi
         peakemi::options
         peakemi::warnings)
 
+# ---------------------------------------------------------------------------
+# peakemi-cli: the same measurement suite, driven from a build script
+# ---------------------------------------------------------------------------
+# A console executable of its own rather than a --headless switch on the GUI
+# binary: peakemi is linked as a Windows GUI subsystem program and has no
+# console to write to, which is exactly where a build server reads its output.
+qt_add_executable(peakemi-cli
+    cli_main.cpp)
+
+# peakemi::ui only for the spectrum image the PDF report embeds; the measurement
+# itself goes through peakemi::cli, which links no widgets at all.
+target_link_libraries(peakemi-cli
+    PRIVATE
+        peakemi::cli
+        peakemi::ui
+        peakemi::options
+        peakemi::warnings)
+
+set_target_properties(peakemi-cli PROPERTIES
+    FOLDER "app"
+    WIN32_EXECUTABLE FALSE
+    MACOSX_BUNDLE    FALSE)
+
 set_target_properties(peakemi PROPERTIES
     FOLDER "app"
     WIN32_EXECUTABLE      TRUE
@@ -69,6 +92,17 @@ if(APPLE)
         COMMENT "Adding the example files to the bundle"
         VERBATIM)
 
+    # The command line tool travels inside the bundle, beside the application
+    # binary: a macOS install from the disk image can then be scripted without a
+    # second download.
+    add_custom_command(TARGET peakemi-cli POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<TARGET_FILE:peakemi-cli>"
+                "$<TARGET_FILE_DIR:peakemi>/peakemi-cli"
+        COMMENT "Adding peakemi-cli to the bundle"
+        VERBATIM)
+    add_dependencies(peakemi-cli peakemi)
+
     # `cmake --build . --target dmg` produces a disk image from the bundle that
     # was just built: Qt deployed inside it, an Applications symlink to drag
     # onto, the licence, and a mount-and-launch check before it is called done.
@@ -80,14 +114,14 @@ if(APPLE)
                 --output "${PEAKEMI_DMG}"
                 --version "${PEAKEMI_VERSION_LABEL}"
                 --qt-bin "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}"
-        DEPENDS peakemi
+        DEPENDS peakemi peakemi-cli
         COMMENT "Bundling ${PEAKEMI_DMG}"
         VERBATIM
         USES_TERMINAL)
     set_target_properties(dmg PROPERTIES FOLDER "app")
 endif()
 
-install(TARGETS peakemi
+install(TARGETS peakemi peakemi-cli
     BUNDLE  DESTINATION .
     RUNTIME DESTINATION bin)
 

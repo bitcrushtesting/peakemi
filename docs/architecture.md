@@ -32,16 +32,18 @@ supply adapters. Dependencies point inward only.
 ### 2.1 Module map
 
 ```text
-                         ┌────────────────────────────┐
-                         │        app (exe)           │  wiring, CLI, main()
-                         └─────────────┬──────────────┘
-                                       │
-                         ┌─────────────▼──────────────┐
-                         │           ui               │  Qt Widgets, plotting,
-                         │ (widgets, models, plot)    │  view-models
-                         └─────────────┬──────────────┘
-                                       │  (signals / view-models)
-   ┌───────────────────────────────────▼───────────────────────────────────┐
+              ┌──────────────────────┐        ┌──────────────────────┐
+              │   peakemi (exe)      │        │  peakemi-cli (exe)   │  wiring, main()
+              └─────────┬────────────┘        └─────────┬────────────┘
+                        │                               │
+              ┌─────────▼────────────┐        ┌─────────▼────────────┐
+              │         ui           │◄───────┤        cli           │  widgets · headless
+              │ widgets, models,     │  plot  │ options, runner,     │  run, exit codes
+              │ plot                 │  image │ exit-code policy     │
+              └─────────┬────────────┘        └─────────┬────────────┘
+                        └─────────────┬─────────────────┘
+                                      │
+   ┌──────────────────────────────────▼────────────────────────────────────┐
    │                                 core                                  │
    │  domain model · measurement engine · limits · corrections · session   │
    │  peak detection · export · report composition · settings · logging    │
@@ -69,12 +71,19 @@ supply adapters. Dependencies point inward only.
 | `peakemi_drivers` | static lib | core, hal | Core | Concrete C++ drivers incl. `SimulatedDriver` |
 | `peakemi_python` | static lib (optional) | core, hal | Core | CPython embedding, `PythonDriverProxy`, plugin discovery, GIL management |
 | `peakemi_reporting` | static lib | core | Core, Gui, PrintSupport, Svg | CSV/JSON writers, PDF report renderer |
+| `peakemi_cli` | static lib | core, hal, drivers, python, reporting | Core, Gui (no Widgets) | Command-line surface, headless run, exit-code policy |
 | `peakemi_ui` | static lib | core, hal, reporting | Widgets, Graphs/Charts | Widgets, view-models, plot layer |
-| `peakemi` | executable | all | all | Composition root, argument parsing, DI wiring |
+| `peakemi` | executable | all | all | Composition root of the application |
+| `peakemi-cli` | executable | cli, ui | all | Composition root of the headless runner |
 | `peakemi_tests` | test exes | all | Test | Unit + integration tests |
 
 **Hard rule:** `peakemi_core` must not link Qt Widgets and must not include a single `Q*Widget`
 header. This keeps the domain headless-testable (NFR-QUA-3) and keeps the UI replaceable.
+`peakemi_cli` observes the same rule: the one thing a headless run wants from the widget layer
+is the spectrum image the PDF report embeds, and that arrives as an injected
+`HeadlessRunner::PlotRenderer` rather than as a link-time dependency. `peakemi-cli` is a console
+executable of its own because `peakemi` is linked as a Windows GUI subsystem program and has no
+console to write to.
 
 ### 2.3 Permitted C++23 subset
 

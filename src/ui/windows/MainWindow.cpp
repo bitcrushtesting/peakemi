@@ -4,11 +4,9 @@
 #include <peakemi/core/Version.h>
 #include <peakemi/drivers/SimulatedDriver.h>
 #include <peakemi/hal/DriverRegistry.h>
-#include <peakemi/hal/SerialScpiTransport.h>
-#include <peakemi/hal/TcpScpiTransport.h>
+#include <peakemi/hal/TransportFactory.h>
 #include <peakemi/hal/UsbTmcTransport.h>
 #include <peakemi/hal/VisaTransport.h>
-#include <peakemi/hal/Vxi11Transport.h>
 #include <peakemi/reporting/CsvExporter.h>
 #include <peakemi/reporting/JsonExporter.h>
 #include <peakemi/reporting/PdfReportRenderer.h>
@@ -23,6 +21,7 @@
 #include <peakemi/ui/ResultsDock.h>
 #include <peakemi/ui/RunConfigDock.h>
 #include <peakemi/ui/RunController.h>
+#include <peakemi/ui/SessionPlot.h>
 
 #include <QApplication>
 #include <QCloseEvent>
@@ -36,7 +35,6 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
-#include <QPalette>
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QSettings>
@@ -45,7 +43,6 @@
 #include <QToolBar>
 
 #include <algorithm>
-#include <cmath>
 
 namespace peakemi::ui {
 namespace {
@@ -78,55 +75,6 @@ namespace {
             return QObject::tr("Aborted");
     }
     return {};
-}
-
-/// Series colours that hold up on both a light and a dark plot background.
-///
-/// The trace and limit colours work on either; the verified-point green does
-/// not, so it is lightened where the background is dark.
-[[nodiscard]] bool onDarkBackground()
-{
-    return QGuiApplication::palette().color(QPalette::Base).lightness() < 128;
-}
-
-[[nodiscard]] QColor verifiedPointColour()
-{
-    return onDarkBackground() ? QColor{0x4C, 0xD9, 0x8C} : QColor{0x0B, 0x80, 0x43};
-}
-
-[[nodiscard]] QVector<QPointF> toPoints(const Trace& trace)
-{
-    QVector<QPointF> points;
-    points.reserve(trace.size());
-    for (int i = 0; i < trace.size(); ++i) {
-        points.append(QPointF{static_cast<double>(trace.axis.frequencyAt(i).value()),
-                              trace.amplitudes[static_cast<std::size_t>(i)]});
-    }
-    return points;
-}
-
-/// Sample a limit line densely enough that a log axis stays smooth.
-[[nodiscard]] QVector<QPointF> toPoints(const LimitLine& limit, FrequencyRange span)
-{
-    QVector<QPointF> points;
-    const auto coverage = limit.coverage();
-    const auto start = std::max(coverage.start, span.start);
-    const auto stop = std::min(coverage.stop, span.stop);
-    if (stop <= start) {
-        return points;
-    }
-
-    constexpr int Samples = 400;
-    for (int i = 0; i <= Samples; ++i) {
-        const double fraction = static_cast<double>(i) / Samples;
-        const auto frequency = start + Hertz{static_cast<std::int64_t>(
-                                           fraction * static_cast<double>((stop - start).value()))};
-        const double value = limit.evaluateAt(frequency);
-        if (std::isfinite(value)) {
-            points.append(QPointF{static_cast<double>(frequency.value()), value});
-        }
-    }
-    return points;
 }
 
 } // namespace
@@ -490,10 +438,10 @@ void MainWindow::showLimitOverlays()
         PlotSeries series;
         series.id = QStringLiteral("limit:%1").arg(QString::fromStdString(limit.name));
         series.label = QString::fromStdString(limit.name);
-        series.colour = QColor{0xC0, 0x39, 0x2B};
+        series.colour = limitColour();
         series.style = PlotStyle::Dashed;
         series.width = 1.5;
-        series.points = toPoints(limit, m_session.config.span);
+        series.points = limitPoints(limit, m_session.config.span);
         m_plot->setSeries(series);
     }
     m_plot->setAmplitudeLabel(m_session.config.limits.empty()
@@ -514,46 +462,39 @@ void MainWindow::onConnectRequested(const TransportDescriptor& descriptor, const
     TransportPtr transport;
     DriverPtr driver;
 
-    switch (descriptor.kind) {
-        case TransportKind::Simulated: {
-            auto simulated = std::make_shared<drivers::SimulatedDriver>();
-            auto config = simulated->config();
-            config.timeScale = 0.15; // lifelike pacing without a 20 minute demo
-            simulated->setConfig(config);
-            driver = simulated;
-            break;
+    if (descriptor.kind == TransportKind::Simulated) {
+        auto simulated = std::make_shared<drivers::SimulatedDriver>();
+        auto config = simulated->config();
+        config.timeScale = 0.15; // lifelike pacing without a 20 minute demo
+        simulated->setConfig(config);
+        driver = simulated;
+    } else {
+        // The two optional buses get their own message: "not built in" and "not
+        // installed" are different problems with different fixes, and the
+        // factory's diagnostic detail is not the place to explain either.
+        if (descriptor.kind == TransportKind::UsbTmc && !hal::UsbTmcTransport::isSupported()) {
+            QMessageBox::information(
+                this,
+                tr("USB support not built in"),
+                tr("This build has no USBTMC transport. Configure PeakEmi with "
+                   "-DPEAKEMI_WITH_USBTMC=ON to talk to USB instruments."));
+            return;
         }
-        case TransportKind::Tcp:
-            transport = std::make_shared<hal::TcpScpiTransport>(descriptor);
-            break;
-        case TransportKind::Vxi11:
-            transport = std::make_shared<hal::Vxi11Transport>(descriptor);
-            break;
-        case TransportKind::Serial:
-            transport = std::make_shared<hal::SerialScpiTransport>(descriptor);
-            break;
-        case TransportKind::UsbTmc:
-            if (!hal::UsbTmcTransport::isSupported()) {
-                QMessageBox::information(
-                    this,
-                    tr("USB support not built in"),
-                    tr("This build has no USBTMC transport. Configure PeakEmi with "
-                       "-DPEAKEMI_WITH_USBTMC=ON to talk to USB instruments."));
-                return;
-            }
-            transport = std::make_shared<hal::UsbTmcTransport>(descriptor);
-            break;
-        case TransportKind::Visa:
-            if (!hal::VisaTransport::isAvailable()) {
-                QMessageBox::information(
-                    this,
-                    tr("No VISA runtime"),
-                    tr("No VISA runtime was found on this machine. PeakEmi talks to "
-                       "instruments directly over TCP, VXI-11, USB and serial without it."));
-                return;
-            }
-            transport = std::make_shared<hal::VisaTransport>(descriptor);
-            break;
+        if (descriptor.kind == TransportKind::Visa && !hal::VisaTransport::isAvailable()) {
+            QMessageBox::information(
+                this,
+                tr("No VISA runtime"),
+                tr("No VISA runtime was found on this machine. PeakEmi talks to "
+                   "instruments directly over TCP, VXI-11, USB and serial without it."));
+            return;
+        }
+        auto made = hal::makeTransport(descriptor);
+        if (!made) {
+            QMessageBox::warning(
+                this, tr("Connection failed"), QString::fromStdString(made.error().message()));
+            return;
+        }
+        transport = *made;
     }
 
     if (!driver) {
@@ -618,8 +559,8 @@ void MainWindow::onTraceAcquired(const TracePtr& trace)
     PlotSeries series;
     series.id = QStringLiteral("trace:live");
     series.label = tr("Phase 1 scan");
-    series.colour = QColor{0x1A, 0x73, 0xE8};
-    series.points = toPoints(*trace);
+    series.colour = traceColour();
+    series.points = tracePoints(*trace);
     m_plot->setSeries(series);
     m_plot->setAmplitudeLabel(qs(amplitudeUnitKey(trace->unit)));
     m_plot->autoScale();
@@ -826,8 +767,8 @@ void MainWindow::openSessionFile(const QString& path)
         PlotSeries series;
         series.id = QStringLiteral("trace:live");
         series.label = QString::fromStdString(trace.label);
-        series.colour = QColor{0x1A, 0x73, 0xE8};
-        series.points = toPoints(trace);
+        series.colour = traceColour();
+        series.points = tracePoints(trace);
         m_plot->setSeries(series);
         m_plot->setAmplitudeLabel(qs(amplitudeUnitKey(trace.unit)));
         m_plot->autoScale();

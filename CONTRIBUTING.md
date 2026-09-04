@@ -47,9 +47,10 @@ ctest --preset debug -R limits                                # one executable
 QT_QPA_PLATFORM=offscreen ./build/debug/bin/test_engine_run   # directly, for the output
 ```
 
-Everything runs headless, including the UI tests and the integration test that drives a
-complete two-phase run against the simulated analyzer. A new instrument driver ships with
-a recorded transcript fixture; a fixed bug ships with the test that would have caught it.
+Everything runs headless, including the UI tests and the integration tests that drive a
+complete two-phase run against the simulated analyzer, once through the measurement engine
+and once through `peakemi-cli`. A new instrument driver ships with a recorded transcript
+fixture; a fixed bug ships with the test that would have caught it.
 
 The optional features are built out by default, so switch them in before touching them:
 
@@ -62,7 +63,9 @@ cmake --preset debug -DPEAKEMI_WITH_USBTMC=ON -DPEAKEMI_WITH_VISA=ON -DPEAKEMI_W
 Every pull request is built on Windows/MSVC, Ubuntu/GCC and macOS/AppleClang with warnings
 as errors, runs the suite headless, and is checked with `clang-format` and `clang-tidy`.
 The analysis job builds with every optional feature on, so optional code cannot rot
-unnoticed.
+unnoticed. Each platform then drives the `peakemi-cli` binary it just built through a
+simulated run: the exit-code contract is a promise made to build scripts outside this
+process, and no in-process test can check it.
 
 Three differences between a local build and CI have each produced a red build that was
 green locally. They are worth knowing before you spend a round trip on one:
