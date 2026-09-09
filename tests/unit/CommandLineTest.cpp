@@ -132,6 +132,7 @@ void CommandLineTest::overridesAreOnlySetWhenGiven()
     QVERIFY(!bare->options.stop.has_value());
     QVERIFY(!bare->options.dwell.has_value());
     QVERIFY(!bare->options.points.has_value());
+    QVERIFY(!bare->options.verificationSpan.has_value());
 
     const auto set = parseCommandLine(commandLine({QStringLiteral("--start"),
                                                    QStringLiteral("150k"),
@@ -142,7 +143,9 @@ void CommandLineTest::overridesAreOnlySetWhenGiven()
                                                    QStringLiteral("--points"),
                                                    QStringLiteral("2001"),
                                                    QStringLiteral("--detector"),
-                                                   QStringLiteral("average")}));
+                                                   QStringLiteral("average"),
+                                                   QStringLiteral("--verification-span"),
+                                                   QStringLiteral("200k")}));
     const auto reason = test::errorText(set);
     QVERIFY2(set.has_value(), reason.constData());
     QCOMPARE(set->options.start.value(), kilohertz(150));
@@ -150,6 +153,16 @@ void CommandLineTest::overridesAreOnlySetWhenGiven()
     QCOMPARE(set->options.dwell.value(), std::chrono::milliseconds{2000});
     QCOMPARE(set->options.points.value(), 2001);
     QCOMPARE(set->options.verificationDetector.value(), Detector::Average);
+    QCOMPARE(set->options.verificationSpan.value(), kilohertz(200));
+
+    // Zero is the value that matters and the one a range check would reject by
+    // accident: it selects zero span, which is what dwells at the frequency
+    // instead of sweeping across it.
+    const auto zero =
+        parseCommandLine(commandLine({QStringLiteral("--verification-span"), QStringLiteral("0")}));
+    const auto zeroReason = test::errorText(zero);
+    QVERIFY2(zero.has_value(), zeroReason.constData());
+    QCOMPARE(zero->options.verificationSpan.value(), Hertz{0});
 }
 
 void CommandLineTest::repeatableOptionsKeepTheirOrder()

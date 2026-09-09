@@ -216,6 +216,9 @@ Result<RunConfiguration> HeadlessRunner::buildConfiguration()
     if (m_options.verificationDetector) {
         config.verificationDetector = *m_options.verificationDetector;
     }
+    if (m_options.verificationSpan) {
+        config.verificationSpan = *m_options.verificationSpan;
+    }
     if (m_options.dwell) {
         config.dwellTime = *m_options.dwell;
     }

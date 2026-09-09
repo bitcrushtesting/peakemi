@@ -67,6 +67,12 @@ struct HeadlessOptions
     std::optional<int> points;
     std::optional<Decibel> refLevel;
     std::optional<Detector> verificationDetector;
+    /// Span of the Phase 2 verification sweep, centred on the peak. Zero means
+    /// zero span, which on instruments that have a fixed-tuned receiver is what
+    /// gets the dwell measured at the frequency rather than spread across a
+    /// sweep -- the difference between a quasi-peak reading that means what
+    /// CISPR says and one that reads low.
+    std::optional<Hertz> verificationSpan;
     std::optional<std::chrono::milliseconds> dwell;
     std::optional<int> passes;
     std::optional<int> maximumPeaks;
