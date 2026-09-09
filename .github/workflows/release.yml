@@ -104,13 +104,18 @@ jobs:
       # PEAKEMI_EXPECT_VERSION makes the build fail if the version it derives
       # from the tag is not the one being released -- which is what a clone
       # that could not see the tag looks like.
+      # The -D argument is quoted because this step runs under pwsh on the
+      # Windows runner and bash elsewhere. PowerShell splits the unquoted token
+      # -DPEAKEMI_EXPECT_VERSION=0.3.0 into two arguments, and cmake takes the
+      # second as a source directory: "Could not read presets from .../.3.0".
+      # The quotes are harmless to bash and are what keep it one argument.
       - name: Build
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
         run: >
           cmake --preset release
-          -DPEAKEMI_EXPECT_VERSION=${{ needs.verify-tag.outputs.version }}
+          "-DPEAKEMI_EXPECT_VERSION=${{ needs.verify-tag.outputs.version }}"
           && cmake --build --preset release
 
       # A release binary that fails its own test suite never reaches a user.
