@@ -159,10 +159,14 @@ Status ScpiAnalyzerDriver::configureSweep(const SweepParams& requested)
         {m_dialect.stopFrequency, scpi::formatHertz(requested.span.stop)},
         {m_dialect.sweepPoints, std::to_string(requested.points)},
         {m_dialect.detector, detectorKeyword(requested.detector)},
-        {m_dialect.referenceLevel, scpi::formatDecibel(requested.refLevel)},
+        // The unit goes first: instruments that take the reference level in
+        // whatever unit is currently selected -- the UNI-T UTS3000T is one --
+        // would otherwise read the dBuV number as dBm and clamp it to the top
+        // of the scale, which is a wrong reference level and not an error.
         {m_dialect.amplitudeUnit,
          m_capabilities.nativeUnit == AmplitudeUnit::dBm ? m_dialect.dBmKeyword
                                                          : m_dialect.dBuVKeyword},
+        {m_dialect.referenceLevel, scpi::formatDecibel(requested.refLevel)},
         {m_dialect.preamp, requested.preamp ? "ON" : "OFF"},
     };
     for (const auto& [command, value] : steps) {
@@ -329,6 +333,19 @@ DriverPtr makeRigolDsaDriver()
         .id = "rigol.dsa800",
         .name = family.name,
         .vendor = "Rigol",
+        .version = "1.0",
+        .origin = "built-in",
+        .supportedTransports = {TransportKind::Tcp, TransportKind::Vxi11, TransportKind::UsbTmc}};
+    return std::make_shared<ScpiAnalyzerDriver>(info, family.capabilities, family.dialect);
+}
+
+DriverPtr makeUnitrendUtsDriver()
+{
+    const auto family = familyProfile("UNI-T");
+    const DriverInfo info{
+        .id = "unitrend.uts3000t",
+        .name = family.name,
+        .vendor = "UNI-T",
         .version = "1.0",
         .origin = "built-in",
         .supportedTransports = {TransportKind::Tcp, TransportKind::Vxi11, TransportKind::UsbTmc}};
