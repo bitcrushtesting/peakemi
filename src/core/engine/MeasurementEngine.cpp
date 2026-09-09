@@ -292,9 +292,16 @@ Result<MeasurementPoint> MeasurementEngine::verifyPeak(const PeakCandidate& cand
     point.marginDb = margin.marginDb;
     point.rawUnit = trace->unit;
     point.unit = resultingUnit(trace->unit, m_config.corrections);
-    point.detector = params.detector;
-    point.rbw = m_capabilities.coerce(params).rbw;
-    point.vbw = params.vbw;
+    // Record what was measured, not what was asked for. acquireSegment() coerces
+    // the request to what the instrument can do before sending it, so on one
+    // lacking a quasi-peak detector or a CISPR bandwidth the two differ -- and a
+    // point labelled with a detector the instrument never used would be wrong
+    // about the one thing the report exists to record. The bandwidth was already
+    // taken from here; the detector and video bandwidth were not.
+    const SweepParams measured = m_capabilities.coerce(params);
+    point.detector = measured.detector;
+    point.rbw = measured.rbw;
+    point.vbw = measured.vbw;
     point.dwell = m_config.dwellTime;
     point.corrections = applied;
     point.limitName =
