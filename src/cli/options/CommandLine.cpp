@@ -31,6 +31,7 @@ constexpr auto Points = QLatin1StringView{"points"};
 constexpr auto RefLevel = QLatin1StringView{"ref-level"};
 constexpr auto Detector = QLatin1StringView{"detector"};
 constexpr auto Dwell = QLatin1StringView{"dwell"};
+constexpr auto VerificationSpan = QLatin1StringView{"verification-span"};
 constexpr auto Passes = QLatin1StringView{"passes"};
 constexpr auto MaxPeaks = QLatin1StringView{"max-peaks"};
 constexpr auto Margin = QLatin1StringView{"margin"};
@@ -239,6 +240,11 @@ void defineOptions(QCommandLineParser& parser)
          QStringLiteral("Phase 2 detector: peak, quasi-peak, average, rms or sample."),
          QStringLiteral("name")},
         {name::Dwell, QStringLiteral("Phase 2 dwell time, e.g. 1s."), QStringLiteral("duration")},
+        {name::VerificationSpan,
+         QStringLiteral("Span of the Phase 2 sweep, centred on the peak, e.g. 200k. Use 0 for "
+                        "zero span, which dwells at the frequency instead of sweeping across "
+                        "it -- what a CISPR quasi-peak measurement needs."),
+         QStringLiteral("frequency")},
         {name::Passes,
          QStringLiteral("Max-hold passes over the whole loop."),
          QStringLiteral("count")},
@@ -379,6 +385,13 @@ Result<CommandLine> parseCommandLine(const QStringList& arguments)
             return std::unexpected(value.error());
         }
         out.stop = *value;
+    }
+    if (parser.isSet(name::VerificationSpan)) {
+        auto value = parseFrequency(parser.value(name::VerificationSpan));
+        if (!value) {
+            return std::unexpected(value.error());
+        }
+        out.verificationSpan = *value;
     }
     if (parser.isSet(name::Dwell)) {
         auto value = parseDuration(parser.value(name::Dwell));
