@@ -37,6 +37,13 @@ struct InstrumentProfile
 [[nodiscard]] std::optional<InstrumentProfile> profileFor(std::string_view vendor,
                                                           std::string_view model);
 
+/// The profile of the UNI-T UTS3000T's EMI personality, which is a different
+/// instrument from its spectrum-analyzer mode: the CISPR 16-1-1 bandwidths and
+/// the quasi-peak and CISPR-average detectors, none of which the SA mode has.
+/// Driven by UnitrendFscanDriver rather than by a ScpiDialect, so the dialect
+/// member is left at its defaults and unused.
+[[nodiscard]] InstrumentProfile unitrendEmiProfile();
+
 /// The profile a driver falls back to before it has identified the instrument:
 /// the widest capabilities of the family, so nothing is rejected that a later,
 /// narrower profile would have allowed.

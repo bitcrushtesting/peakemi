@@ -105,5 +105,6 @@ private:
 /// Instantiate the drivers of the v1 supported set (requirements 6, Q1).
 [[nodiscard]] DriverPtr makeSiglentSsaDriver();
 [[nodiscard]] DriverPtr makeRigolDsaDriver();
+[[nodiscard]] DriverPtr makeUnitrendUtsDriver();
 
 } // namespace peakemi::drivers

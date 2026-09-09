@@ -95,8 +95,22 @@ QT_QPA_PLATFORM=offscreen ./build/debug/bin/peakemi_screenshots docs/images --da
   selection, bounded and opt-in LAN sweep, live USB hotplug detection, serial port
   enumeration, an optional VISA path, and a raw SCPI console.
 * **Supported analyzers**: Siglent SSA3021X/3032X/3075X and SVA1015X/1032X/1075X, Rigol
-  DSA705/710 and DSA815/832/875, each with its own frequency range, point count and
-  command dialect.
+  DSA705/710 and DSA815/832/875, and the UNI-T UTS3032T+, each with its own frequency
+  range, point count and command dialect. The UTS3032T+ is driven in its spectrum-analyzer
+  mode, which has no quasi-peak detector and none of the CISPR 16-1-1 bandwidths, and the
+  driver declares that: a run asking for either is refused with a reason rather than
+  measured at whatever the instrument would have substituted. The instrument also has a
+  separate EMI mode, driven by a second driver (`unitrend.uts3000t.emi`), which is the
+  one chosen automatically: there the four CISPR 16-1-1 bandwidths (200 Hz, 9 kHz,
+  120 kHz, 1 MHz) and the quasi-peak and CISPR-average detectors are available, and a
+  Phase 2 dwell is measured by the instrument's fixed-tuned receiver. Ask for
+  `--driver unitrend.uts3000t` to use the plain spectrum-analyzer mode instead, which
+  scans faster but cannot make a CISPR measurement.
+
+  A CISPR-conformant dwell needs the verification span set to 0 (`--verification-span 0`,
+  or the Verification span field in the run configuration), which is what routes Phase 2
+  to the receiver. Over a swept verification span the dwell is divided across its points
+  instead of being spent at the frequency, which matters for impulsive emissions.
 * **Python driver plugins**: in a build configured with `PEAKEMI_WITH_PYTHON=ON`, a
   driver can be a single Python file loaded into the embedded interpreter, and the
   measurement engine cannot tell it from one written in C++. A plugin is
