@@ -3,11 +3,13 @@ peakemi_add_module(drivers
         BuiltInDrivers.cpp
         scpi/InstrumentProfiles.cpp
         scpi/ScpiAnalyzerDriver.cpp
+        scpi/UnitrendFscanDriver.cpp
         simulated/SimulatedDriver.cpp
     HEADERS
         include/peakemi/drivers/InstrumentProfiles.h
         include/peakemi/drivers/ScpiAnalyzerDriver.h
         include/peakemi/drivers/SimulatedDriver.h
+        include/peakemi/drivers/UnitrendFscanDriver.h
     PUBLIC
         peakemi::core
         peakemi::hal

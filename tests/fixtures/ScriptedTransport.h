@@ -42,6 +42,18 @@ public:
         });
     }
 
+    /// Position of the first command with @p prefix in the transcript, or -1.
+    /// Lets a test assert the order of two settings, which matters when one is
+    /// interpreted in terms of the other.
+    [[nodiscard]] int indexOfCommandStartingWith(std::string_view prefix) const
+    {
+        const auto found =
+            std::find_if(m_commands.begin(), m_commands.end(), [prefix](const std::string& sent) {
+                return sent.rfind(prefix, 0) == 0;
+            });
+        return found == m_commands.end() ? -1 : static_cast<int>(found - m_commands.begin());
+    }
+
     [[nodiscard]] Status open() override
     {
         m_open = true;
@@ -76,6 +88,10 @@ public:
         if (found == m_responses.end()) {
             return fail(ErrorCode::Timeout, "no scripted response for '" + m_pending + "'");
         }
+        // One reply per query, as an instrument does: a second read with no
+        // query in between finds nothing. Drivers that drain the line until a
+        // read fails would otherwise never see it run dry.
+        m_pending.clear();
         return found->second;
     }
 

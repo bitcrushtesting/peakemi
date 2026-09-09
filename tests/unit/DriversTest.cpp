@@ -5,10 +5,13 @@
 #include <peakemi/drivers/InstrumentProfiles.h>
 #include <peakemi/drivers/ScpiAnalyzerDriver.h>
 #include <peakemi/drivers/SimulatedDriver.h>
+#include <peakemi/drivers/UnitrendFscanDriver.h>
 
 #include <QTest>
 
+#include <algorithm>
 #include <cmath>
+#include <memory>
 
 using namespace peakemi;
 
@@ -33,6 +36,17 @@ private slots:
     void profilesFallBackToTheFamily();
     void driverNarrowsItsCapabilitiesAfterIdentifying();
     void siglentDoesNotSendAFixedPointCount();
+    void unitrendProfileMatchesTheInstrumentOnTheBench();
+    void unitrendRefusesWhatItCannotMeasure();
+    void unitrendSendsTheUnitBeforeTheReferenceLevel();
+    void unitrendDriverCompletesASweep();
+    void fscanProfileOffersWhatTheEmiOptionAdds();
+    void fscanDriverEntersEmiModeAndRefusesIfItCannot();
+    void fscanDriverConfiguresOneScanRange();
+    void fscanDriverAlwaysSetsTheAttenuation();
+    void fscanDriverDwellsWithTheMeterOnZeroSpan();
+    void fscanDriverWaitsOutAMeterThatHasNotSettled();
+    void fscanDriverRefusesAMeterThatReportedNothing();
 };
 
 void DriversTest::simulatedDriverIsDeterministic()
@@ -265,13 +279,21 @@ void DriversTest::profilesCoverTheSupportedModels()
     for (const auto& profile : profiles) {
         QVERIFY2(profile.capabilities.range.isValid(), profile.name.c_str());
         QVERIFY2(!profile.models.empty(), profile.name.c_str());
-        QVERIFY2(profile.capabilities.supports(Detector::QuasiPeak), profile.name.c_str());
         QVERIFY2(profile.capabilities.nativeUnit == AmplitudeUnit::dBuV, profile.name.c_str());
+        QVERIFY2(profile.capabilities.minimumPoints <= profile.capabilities.maximumPoints,
+                 profile.name.c_str());
+        QVERIFY2(!profile.capabilities.detectors.empty(), profile.name.c_str());
+        QVERIFY2(profile.capabilities.supports(Detector::Peak), profile.name.c_str());
 
-        // The bandwidths CISPR 16-1-1 mandates for the bands the instrument
-        // covers have to be available exactly, or a Phase 2 dwell would be
-        // measured at the wrong bandwidth and the numbers would not mean what
-        // the report says they mean.
+        // A profile that offers the quasi-peak detector is claiming the
+        // instrument can make a CISPR-conformant Phase 2 dwell, so it must also
+        // have the bandwidths CISPR 16-1-1 mandates for the bands it covers --
+        // exactly, not merely nearby. Claiming one without the other is the
+        // combination that produces a measurement labelled quasi-peak but taken
+        // at whatever bandwidth happened to be closest.
+        if (!profile.capabilities.supports(Detector::QuasiPeak)) {
+            continue;
+        }
         for (const auto& band : cisprBands()) {
             if (band.range.start >= profile.capabilities.range.stop) {
                 continue;
@@ -374,6 +396,399 @@ void DriversTest::siglentDoesNotSendAFixedPointCount()
     QVERIFY(!transport->sawCommandStartingWith(":SENSe:SWEep:POINts"));
     QVERIFY(transport->sawCommandStartingWith(":TRACe:DATA? 1") ||
             transport->sawCommandStartingWith(":SENSe:FREQuency:STARt"));
+}
+
+void DriversTest::unitrendProfileMatchesTheInstrumentOnTheBench()
+{
+    // *IDN? of the reference unit: "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059".
+    // The vendor field is the long form, the model carries a '+', and both have
+    // to reach the profile for the driver to narrow itself correctly.
+    const auto profile = drivers::profileFor("UNI-TREND", "UTS3032T+");
+    QVERIFY(profile.has_value());
+    QCOMPARE(profile->name, std::string{"UNI-T UTS3032T+"});
+    QCOMPARE(profile->capabilities.range.stop, gigahertz(3.2));
+    QCOMPARE(profile->capabilities.minimumPoints, 11);
+    QCOMPARE(profile->capabilities.maximumPoints, 10001);
+    QVERIFY(profile->capabilities.preamp);
+
+    // Measured on the instrument: no quasi-peak and no RMS, both answered with
+    // -224 "Illegal parameter value".
+    QVERIFY(profile->capabilities.supports(Detector::Peak));
+    QVERIFY(profile->capabilities.supports(Detector::Average));
+    QVERIFY(profile->capabilities.supports(Detector::Sample));
+    QVERIFY(!profile->capabilities.supports(Detector::QuasiPeak));
+    QVERIFY(!profile->capabilities.supports(Detector::Rms));
+
+    // A plain 1-3-10 ladder that stops at 1 MHz, with none of the three CISPR
+    // bandwidths in it.
+    const auto& bandwidths = profile->capabilities.resolutionBandwidths;
+    QCOMPARE(bandwidths.front(), hertz(1));
+    QCOMPARE(bandwidths.back(), megahertz(1));
+    for (const auto missing : {hertz(200), kilohertz(9), kilohertz(120)}) {
+        QVERIFY2(std::find(bandwidths.begin(), bandwidths.end(), missing) == bandwidths.end(),
+                 std::to_string(missing.value()).c_str());
+    }
+
+    // An unlisted model of the series keeps the family defaults.
+    QVERIFY(!drivers::profileFor("UNI-TREND", "UTS3021T").has_value());
+    const auto family = drivers::familyProfile("UNI-TREND");
+    QCOMPARE(family.name, std::string{"UNI-T UTS3000T"});
+    QCOMPARE(family.capabilities.range.stop, gigahertz(3.2));
+}
+
+void DriversTest::unitrendRefusesWhatItCannotMeasure()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059");
+
+    auto driver = drivers::makeUnitrendUtsDriver();
+    QVERIFY(driver->open(transport).has_value());
+    QCOMPARE(driver->identify()->model, std::string{"UTS3032T+"});
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(30), megahertz(230)};
+    params.points = 1001;
+    params.refLevel = decibel(107.0);
+
+    // The instrument tunes 100 kHz when asked for the CISPR 120 kHz and reports
+    // no error, so the refusal has to come from here or the run would carry a
+    // bandwidth the report cannot justify.
+    params.rbw = kilohertz(120);
+    auto rejected = driver->configureSweep(params);
+    QVERIFY(!rejected.has_value());
+    QCOMPARE(rejected.error().code, ErrorCode::UnsupportedSetting);
+    QVERIFY(rejected.error().detail.find("resolution bandwidth") != std::string::npos);
+
+    // Same for the detector the instrument does not have.
+    params.rbw = kilohertz(100);
+    params.detector = Detector::QuasiPeak;
+    rejected = driver->configureSweep(params);
+    QVERIFY(!rejected.has_value());
+    QCOMPARE(rejected.error().code, ErrorCode::UnsupportedSetting);
+    QVERIFY(rejected.error().detail.find("detector") != std::string::npos);
+
+    // And for a span past the 3.2 GHz ceiling, which the instrument would
+    // silently clamp rather than refuse.
+    params.detector = Detector::Peak;
+    params.span = FrequencyRange{megahertz(30), gigahertz(4.0)};
+    rejected = driver->configureSweep(params);
+    QVERIFY(!rejected.has_value());
+    QCOMPARE(rejected.error().code, ErrorCode::UnsupportedSetting);
+}
+
+void DriversTest::unitrendSendsTheUnitBeforeTheReferenceLevel()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059");
+
+    auto driver = drivers::makeUnitrendUtsDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(30), megahertz(230)};
+    params.points = 1001;
+    params.rbw = kilohertz(100);
+    params.refLevel = decibel(107.0);
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    // This instrument reads the reference level in whatever unit is selected at
+    // the time, so 107 arriving before ":UNIT:POWer DBUV" would be taken as
+    // 107 dBm and clamped to the top of the scale -- a wrong reference level
+    // with no error to show for it.
+    const auto unitIndex = transport->indexOfCommandStartingWith(":UNIT:POWer");
+    const auto refLevelIndex =
+        transport->indexOfCommandStartingWith(":DISPlay:WINDow:TRACe:Y:SCALe:RLEVel");
+    QVERIFY(unitIndex >= 0);
+    QVERIFY(refLevelIndex >= 0);
+    QVERIFY2(unitIndex < refLevelIndex, "the amplitude unit must precede the reference level");
+
+    // The point count is writable here, unlike on the Siglent.
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:SWEep:POINts 1001"));
+}
+
+void DriversTest::unitrendDriverCompletesASweep()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059");
+    transport->setResponse("*OPC?", "1");
+    transport->setResponse(":TRACe:DATA? TRACE1", "25.9,23.6,21.3,44.5");
+
+    auto driver = drivers::makeUnitrendUtsDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(88), megahertz(108)};
+    params.points = 1001;
+    params.rbw = kilohertz(100);
+    params.refLevel = decibel(107.0);
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    const CancelToken cancel;
+    QVERIFY(driver->armAndTrigger(cancel).has_value());
+    const auto trace = driver->fetchTrace(cancel);
+    const auto reason = test::errorText(trace);
+    QVERIFY2(trace.has_value(), reason.constData());
+    QCOMPARE(trace->amplitudes, (std::vector<double>{25.9, 23.6, 21.3, 44.5}));
+    QCOMPARE(trace->unit, AmplitudeUnit::dBuV);
+    QCOMPARE(trace->source.manufacturer, std::string{"UNI-TREND"});
+    QCOMPARE(trace->source.model, std::string{"UTS3032T+"});
+    QCOMPARE(trace->axis.start, megahertz(88));
+    QCOMPARE(trace->axis.stop, megahertz(108));
+}
+
+namespace {
+
+/// A scripted instrument that behaves like the EMI personality: it names
+/// itself, reports the mode, and answers the error queue.
+[[nodiscard]] std::shared_ptr<test::ScriptedTransport> emiTransport()
+{
+    auto transport = std::make_shared<test::ScriptedTransport>();
+    transport->setResponse("*IDN?", "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059");
+    transport->setResponse(":INSTrument:SELect?", "EMI");
+    transport->setResponse(":SYSTem:ERRor?", "0,\"No error\"");
+    return transport;
+}
+
+} // namespace
+
+void DriversTest::fscanProfileOffersWhatTheEmiOptionAdds()
+{
+    const auto profile = drivers::unitrendEmiProfile();
+    const auto& capabilities = profile.capabilities;
+
+    // The whole point of this driver: the detectors the SA mode does not have.
+    QVERIFY(capabilities.supports(Detector::QuasiPeak));
+    QVERIFY(capabilities.supports(Detector::Peak));
+    QVERIFY(capabilities.supports(Detector::Average));
+    QVERIFY(!capabilities.supports(Detector::Rms));
+    QVERIFY(!capabilities.supports(Detector::Sample));
+
+    // Exactly the CISPR 16-1-1 bandwidths, and exactly those: this mode has no
+    // 1-3-10 ladder at all, so an instrument-shaped bandwidth like 100 kHz is
+    // refused here rather than snapped to 120 kHz by the instrument.
+    QCOMPARE(capabilities.resolutionBandwidths,
+             (std::vector<Hertz>{hertz(200), kilohertz(9), kilohertz(120), megahertz(1)}));
+    for (const auto& band : cisprBands()) {
+        if (band.range.start >= capabilities.range.stop) {
+            continue;
+        }
+        QCOMPARE(capabilities.nearestResolutionBandwidth(band.resolutionBandwidth),
+                 band.resolutionBandwidth);
+    }
+
+    // "Average" has to reach the CISPR average detector, not the plain one:
+    // the (AV) limit lines are written for CAVerage.
+    QCOMPARE(drivers::UnitrendFscanDriver::detectorKeyword(Detector::Average),
+             std::string{"CAVerage"});
+    QCOMPARE(drivers::UnitrendFscanDriver::detectorKeyword(Detector::QuasiPeak),
+             std::string{"QPEak"});
+    QVERIFY(drivers::UnitrendFscanDriver::detectorKeyword(Detector::Rms).empty());
+}
+
+void DriversTest::fscanDriverEntersEmiModeAndRefusesIfItCannot()
+{
+    auto transport = emiTransport();
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+    QVERIFY(transport->sawCommandStartingWith(":INSTrument:SELect EMI"));
+    // The scan trace honours the unit; asking for dBuV is what keeps the
+    // amplitudes in the unit the limit lines are written in.
+    QVERIFY(transport->sawCommandStartingWith(":UNIT:POWer DBUV"));
+
+    // Closing must leave the instrument stopped, not scanning. A continuous EMI
+    // scan never yields the bus, so an instrument left running that way cannot
+    // be reached again over the network at all.
+    driver->close();
+    QVERIFY(transport->sawCommandStartingWith(":INITiate:STOP"));
+    QVERIFY(transport->sawCommandStartingWith(":INITiate2:CONTinuous OFF"));
+    QVERIFY(!transport->sawCommandStartingWith(":INITiate2:CONTinuous ON"));
+
+    // An instrument without the EMI option stays in SA, and that has to be a
+    // refusal with a reason rather than a run measured in the wrong mode.
+    auto plain = std::make_shared<test::ScriptedTransport>();
+    plain->setResponse("*IDN?", "UNI-TREND,UTS3032T+,ASA3726210001,V1.04.0059");
+    plain->setResponse(":INSTrument:SELect?", "SA");
+    auto refused = drivers::makeUnitrendFscanDriver();
+    const auto status = refused->open(plain);
+    QVERIFY(!status.has_value());
+    QCOMPARE(status.error().code, ErrorCode::UnsupportedSetting);
+    QVERIFY(status.error().detail.find("EMI") != std::string::npos);
+}
+
+void DriversTest::fscanDriverConfiguresOneScanRange()
+{
+    auto transport = emiTransport();
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(30), megahertz(230)};
+    params.points = 1001;
+    params.rbw = kilohertz(120);
+    params.detector = Detector::QuasiPeak;
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:STARt 30000000"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:STOP 230000000"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:POINts 1001"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:BANDwidth:RESolution 120000"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:DETector:TRACe1 QPEak"));
+
+    // Every other slot is switched off: one left enabled would be scanned too
+    // and its points appended, widening the span without saying so.
+    for (int slot = 2; slot <= 10; ++slot) {
+        const auto command = ":SENSe:FSCan:SCAN" + std::to_string(slot) + ":STATe OFF";
+        QVERIFY2(transport->sawCommandStartingWith(command), command.c_str());
+    }
+
+    // The range is enabled last -- enabling it before its bounds are set leaves
+    // it switched off again on the real instrument.
+    const auto enabled = transport->indexOfCommandStartingWith(":SENSe:FSCan:SCAN1:STATe ON");
+    const auto stop = transport->indexOfCommandStartingWith(":SENSe:FSCan:SCAN1:STOP");
+    QVERIFY(enabled >= 0);
+    QVERIFY2(stop < enabled, "the scan range must be enabled after its bounds are set");
+
+    // A bandwidth this mode does not have is refused rather than snapped.
+    params.rbw = kilohertz(100);
+    const auto rejected = driver->configureSweep(params);
+    QVERIFY(!rejected.has_value());
+    QCOMPARE(rejected.error().code, ErrorCode::UnsupportedSetting);
+}
+
+void DriversTest::fscanDriverAlwaysSetsTheAttenuation()
+{
+    // The EMI mode has no auto-attenuation. Leaving the instrument's previous
+    // value in place is what made an open input read forty decibels high, so
+    // the driver must write one every time, including when the caller asked
+    // for "automatic".
+    auto transport = emiTransport();
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(30), megahertz(230)};
+    params.points = 1001;
+    params.rbw = kilohertz(120);
+    params.automaticAttenuation = true;
+    QVERIFY(driver->configureSweep(params).has_value());
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:INPut:ATTenuation 10"));
+
+    // An explicit odd value is rounded to the even step the scan list documents,
+    // here rather than silently by the instrument.
+    auto second = emiTransport();
+    auto rounding = drivers::makeUnitrendFscanDriver();
+    QVERIFY(rounding->open(second).has_value());
+    params.automaticAttenuation = false;
+    params.attenuation = decibel(11.0);
+    QVERIFY(rounding->configureSweep(params).has_value());
+    QVERIFY(second->sawCommandStartingWith(":SENSe:FSCan:SCAN1:INPut:ATTenuation 10"));
+}
+
+void DriversTest::fscanDriverDwellsWithTheMeterOnZeroSpan()
+{
+    auto transport = emiTransport();
+    // Three meters answer; only the first is enabled, the others report the
+    // "not measuring" sentinel.
+    transport->setResponse(":CALCulate:METer:POWer:PEAK?",
+                           "-8.233855e+01,9.910000e+37,9.910000e+37");
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(98), megahertz(98)}; // zero span: a dwell
+    // The point count belongs to the scan list and means nothing to the meter,
+    // but it is still validated, and the engine coerces it up to the minimum
+    // before the driver ever sees it -- so this is what actually arrives.
+    params.points = 11;
+    params.rbw = kilohertz(120);
+    params.detector = Detector::QuasiPeak;
+    params.sweepTime = std::chrono::milliseconds{50}; // the engine carries the dwell here
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:FREQuency:CENTer 98000000"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:METer1:DETector QPEak"));
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:METer:DETector:DWELl"));
+    QVERIFY(transport->sawCommandStartingWith(":DISPlay:METer1:STATe ON"));
+    // Nothing from the scan list: a dwell is a different instrument function.
+    QVERIFY(!transport->sawCommandStartingWith(":SENSe:FSCan:SCAN1:STARt"));
+
+    const CancelToken cancel;
+    QVERIFY(driver->armAndTrigger(cancel).has_value());
+    // The peak hold is what the reading is taken from, so it has to be cleared
+    // or this point reports the previous one's level.
+    QVERIFY(transport->sawCommandStartingWith(":SENSe:METer:PHOLd:RESet"));
+
+    const auto trace = driver->fetchTrace(cancel);
+    const auto reason = test::errorText(trace);
+    QVERIFY2(trace.has_value(), reason.constData());
+    QCOMPARE(trace->size(), 1);
+    // The meter answers in dBm whatever :UNIT:POWer says, so -82.34 dBm has to
+    // come back as the dBuV the driver advertises: +107 dB in 50 ohms.
+    QCOMPARE(trace->unit, AmplitudeUnit::dBuV);
+    QVERIFY(std::abs(trace->amplitudes.front() - 24.66) < 0.02);
+    QCOMPARE(trace->detector, Detector::QuasiPeak);
+}
+
+void DriversTest::fscanDriverWaitsOutAMeterThatHasNotSettled()
+{
+    auto transport = emiTransport();
+    // What the instrument really answers for the first second or two after the
+    // peak hold is reset, before the detector has formed a result.
+    transport->setResponse(":CALCulate:METer:POWer:PEAK?", "-inf,9.910000e+37,9.910000e+37");
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+    auto* fscan = static_cast<drivers::UnitrendFscanDriver*>(driver.get());
+    fscan->setMeterSettleBudget(std::chrono::seconds{5});
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(98), megahertz(98)};
+    params.points = 11;
+    params.detector = Detector::QuasiPeak;
+    params.sweepTime = std::chrono::milliseconds{20};
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    const CancelToken cancel;
+    QVERIFY(driver->armAndTrigger(cancel).has_value());
+
+    // Once the detector settles the reading is taken -- -inf must never be
+    // mistaken for a level, and the quasi-peak detector reports it for about
+    // two seconds after every reset.
+    transport->setResponse(":CALCulate:METer:POWer:PEAK?",
+                           "-8.233855e+01,9.910000e+37,9.910000e+37");
+    const auto trace = driver->fetchTrace(cancel);
+    const auto reason = test::errorText(trace);
+    QVERIFY2(trace.has_value(), reason.constData());
+    QVERIFY(std::abs(trace->amplitudes.front() - 24.66) < 0.02);
+}
+
+void DriversTest::fscanDriverRefusesAMeterThatReportedNothing()
+{
+    auto transport = emiTransport();
+    // Every meter disabled: 9.91e+37 is the SCPI "not a number", and it must
+    // never reach a report as though it were a level.
+    transport->setResponse(":CALCulate:METer:POWer:PEAK?",
+                           "9.910000e+37,9.910000e+37,9.910000e+37");
+    auto driver = drivers::makeUnitrendFscanDriver();
+    QVERIFY(driver->open(transport).has_value());
+    // Fail fast: the point of this test is the refusal, not the waiting.
+    std::static_pointer_cast<drivers::UnitrendFscanDriver>(driver)->setMeterSettleBudget(
+        std::chrono::milliseconds{300});
+
+    SweepParams params;
+    params.span = FrequencyRange{megahertz(98), megahertz(98)};
+    params.points = 11;
+    params.detector = Detector::Peak;
+    params.sweepTime = std::chrono::milliseconds{20};
+    QVERIFY(driver->configureSweep(params).has_value());
+
+    const CancelToken cancel;
+    QVERIFY(driver->armAndTrigger(cancel).has_value());
+    const auto trace = driver->fetchTrace(cancel);
+    QVERIFY(!trace.has_value());
+    // A meter that never produces a value is a timeout, not a level: neither
+    // the 9.91e+37 sentinel nor the -inf it reports before its first result may
+    // ever be returned as an amplitude.
+    QCOMPARE(trace.error().code, ErrorCode::Timeout);
 }
 
 QTEST_APPLESS_MAIN(DriversTest)
