@@ -13,6 +13,7 @@ class UnitsTest : public QObject
 private slots:
     void strongTypesRejectMixing();
     void frequencyHelpersRound();
+    void checkedHertzRefusesWhatDoesNotFit();
     void amplitudeConversionRoundTrips();
     void fieldStrengthDoesNotConvert();
     void enumKeysRoundTrip();
@@ -43,6 +44,27 @@ void UnitsTest::frequencyHelpersRound()
     QCOMPARE(megahertz(0.15).value(), 150'000);
     QCOMPARE(gigahertz(1.0).value(), 1'000'000'000);
     QCOMPARE(toMegahertz(hertz(48'000'000)), 48.0);
+}
+
+void UnitsTest::checkedHertzRefusesWhatDoesNotFit()
+{
+    // Same rounding as the scaling helpers: half away from zero.
+    QCOMPARE(checkedHertz(9'000.0).value(), kilohertz(9));
+    QCOMPARE(checkedHertz(0.5).value(), hertz(1));
+    QCOMPARE(checkedHertz(-0.5).value(), hertz(-1));
+
+    QVERIFY(!checkedHertz(std::numeric_limits<double>::infinity()).has_value());
+    QVERIFY(!checkedHertz(-std::numeric_limits<double>::infinity()).has_value());
+    QVERIFY(!checkedHertz(std::numeric_limits<double>::quiet_NaN()).has_value());
+
+    // The values that used to become INT64_MAX rather than an error.
+    QVERIFY(!checkedHertz(1e30).has_value());
+    QVERIFY(!checkedHertz(9223372036854775808.0).has_value()); // 2^63, the first that does not fit
+    QVERIFY(checkedHertz(9223372036854774784.0).has_value());  // the largest double below it
+
+    // -2^63 is a representable int64 but is refused too: the rounding pushes it
+    // past the bound, and a negative frequency has no use here anyway.
+    QVERIFY(!checkedHertz(-9223372036854775808.0).has_value());
 }
 
 void UnitsTest::amplitudeConversionRoundTrips()
@@ -164,4 +186,5 @@ QTEST_APPLESS_MAIN(UnitsTest)
 #include "UnitsTest.moc"
 
 #include <cmath>
+#include <limits>
 #include <type_traits>

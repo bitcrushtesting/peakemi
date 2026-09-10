@@ -46,6 +46,7 @@ private slots:
     void csvRoundTrip();
     void jsonRoundTrip();
     void csvRejectsGarbage();
+    void csvRejectsUnrepresentableFrequencies();
 };
 
 void LimitsTest::undefinedOutsideCoverage()
@@ -219,6 +220,25 @@ void LimitsTest::csvRejectsGarbage()
     QVERIFY(!limit_io::fromCsvText("# name: nothing here\n").has_value());
     QVERIFY(!limit_io::fromCsvText("1000000,not-a-number\n2000000,30\n").has_value());
     QVERIFY(!limit_io::fromJsonText("{not json").has_value());
+}
+
+void LimitsTest::csvRejectsUnrepresentableFrequencies()
+{
+    // 1e30 used to become INT64_MAX, and a breakpoint at 9.2 EHz passes both
+    // the positivity and the ordering check in validate(), so the limit line
+    // was accepted and written into the session as if it meant something.
+    const auto huge = limit_io::fromCsvText("# name: too far\n"
+                                            "1e30,34.0\n"
+                                            "230000000,41.0\n");
+    QVERIFY(!huge.has_value());
+    QCOMPARE(huge.error().code, ErrorCode::ParseFailure);
+
+    // looksNumeric() lets a signed infinity through to the conversion, where
+    // an unsigned one is skipped as stray text well before it.
+    QVERIFY(!limit_io::fromCsvText("# name: infinite\n"
+                                   "+inf,34.0\n"
+                                   "230000000,41.0\n")
+                 .has_value());
 }
 
 QTEST_APPLESS_MAIN(LimitsTest)

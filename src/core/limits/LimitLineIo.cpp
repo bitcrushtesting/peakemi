@@ -175,7 +175,12 @@ Result<LimitLine> fromCsvText(std::string_view text)
         if (row.size() > 2) {
             interpolation = interpolationFromKey(row[2]).value_or(interpolation);
         }
-        line.points.push_back(LimitPoint{.frequency = hertz(static_cast<std::int64_t>(*frequency)),
+        const auto breakpoint = checkedHertz(*frequency);
+        if (!breakpoint) {
+            return fail(ErrorCode::ParseFailure,
+                        "limit CSV row '" + row[0] + "' is not a frequency in range");
+        }
+        line.points.push_back(LimitPoint{.frequency = *breakpoint,
                                          .amplitude = *amplitude,
                                          .interpolationToNext = interpolation});
     }
@@ -260,9 +265,17 @@ Result<CorrectionTable> fromCsvText(std::string_view text)
             return fail(ErrorCode::ParseFailure,
                         "correction CSV row '" + row[0] + "' is not numeric");
         }
-        table.points.emplace_back(hertz(static_cast<std::int64_t>(*frequency)), *value);
+        const auto point = checkedHertz(*frequency);
+        if (!point) {
+            return fail(ErrorCode::ParseFailure,
+                        "correction CSV row '" + row[0] + "' is not a frequency in range");
+        }
+        table.points.emplace_back(*point, *value);
     }
     table.sortPoints();
+    if (auto status = table.validate(); !status) {
+        return std::unexpected(status.error());
+    }
     return table;
 }
 

@@ -4,6 +4,7 @@
 #include <QTest>
 
 #include <cmath>
+#include <limits>
 
 using namespace peakemi;
 
@@ -20,6 +21,7 @@ private slots:
     void antennaFactorProducesFieldStrength();
     void appliedCorrectionsAreReportable();
     void csvRoundTrip();
+    void unusableTablesAreRefused();
 };
 
 void CorrectionsTest::interpolatesOverLogFrequency()
@@ -148,6 +150,31 @@ void CorrectionsTest::csvRoundTrip()
     const auto json = correction_io::fromJsonText(correction_io::toJsonText(table));
     QVERIFY(json.has_value());
     QCOMPARE(json->points, table.points);
+}
+
+void CorrectionsTest::unusableTablesAreRefused()
+{
+    // A correction is added to every amplitude, so a single infinity does not
+    // spoil one point -- it makes every margin NaN, and a NaN margin classifies
+    // as Unknown rather than Fail. A scan that should have failed then reports
+    // no verdict and exits 0, so the table has to be refused at the parse.
+    const auto infinite = correction_io::fromCsvText("# name: Broken\n"
+                                                     "# kind: antenna-factor\n"
+                                                     "30000000,+inf\n"
+                                                     "1000000000,12.0\n");
+    QVERIFY(!infinite.has_value());
+    QCOMPARE(infinite.error().code, ErrorCode::InvalidConfiguration);
+
+    // A frequency past int64 used to saturate to INT64_MAX and be accepted.
+    const auto huge = correction_io::fromCsvText("# name: Broken\n"
+                                                 "1e30,3.0\n"
+                                                 "1000000000,12.0\n");
+    QVERIFY(!huge.has_value());
+    QCOMPARE(huge.error().code, ErrorCode::ParseFailure);
+
+    CorrectionTable byHand;
+    byHand.points = {{megahertz(30), std::numeric_limits<double>::quiet_NaN()}};
+    QVERIFY(!byHand.validate().has_value());
 }
 
 QTEST_APPLESS_MAIN(CorrectionsTest)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <compare>
 #include <cstdint>
 #include <optional>
@@ -76,6 +77,33 @@ using Decibel = Quantity<struct DecibelTag, double>;
 [[nodiscard]] constexpr Hertz gigahertz(double value)
 {
     return Hertz{static_cast<std::int64_t>(value * 1e9 + (value < 0.0 ? -0.5 : 0.5))};
+}
+
+/// Hertz from a double that came from outside: a file, a JSON document or the
+/// command line.
+///
+/// The scaling helpers above are for literals, where the author can see that
+/// the value fits. A parsed number cannot be trusted that far, and converting
+/// one that does not fit into the int64 Hertz holds is undefined behaviour --
+/// which is the quiet kind of wrong, because on AArch64 it saturates to
+/// INT64_MAX and that then passes every positivity and ordering check
+/// downstream. A limit line asking for 1e30 Hz has to be refused at the parse,
+/// not turned into a breakpoint at 9.2 EHz.
+///
+/// Rounds half away from zero, as the scaling helpers do.
+[[nodiscard]] inline std::optional<Hertz> checkedHertz(double value)
+{
+    if (!std::isfinite(value)) {
+        return std::nullopt;
+    }
+    const double rounded = value + (value < 0.0 ? -0.5 : 0.5);
+    // 2^63 is exactly representable as a double, and the cast truncates towards
+    // zero, so the bound is exclusive at both ends.
+    constexpr double Bound = 9223372036854775808.0;
+    if (rounded >= Bound || rounded <= -Bound) {
+        return std::nullopt;
+    }
+    return Hertz{static_cast<std::int64_t>(rounded)};
 }
 
 [[nodiscard]] constexpr Decibel decibel(double value)
