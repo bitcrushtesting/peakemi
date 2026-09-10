@@ -175,6 +175,9 @@ Result<CorrectionTable> correctionTableFromJson(const Json& json)
         }
     }
     table.sortPoints();
+    if (auto status = table.validate(); !status) {
+        return std::unexpected(status.error());
+    }
     return table;
 }
 

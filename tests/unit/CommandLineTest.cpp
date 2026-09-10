@@ -30,6 +30,7 @@ class CommandLineTest : public QObject
 private slots:
     void frequenciesTakeTheUsualSuffixes();
     void frequenciesRejectNonsense();
+    void frequenciesBeyondTheRepresentableRangeAreRefused();
     void durationsTakeTheUsualSuffixes();
     void endpointsCarryTheirBus();
     void endpointsRejectAnUnknownBus();
@@ -61,6 +62,20 @@ void CommandLineTest::frequenciesRejectNonsense()
     QVERIFY(!parseFrequency(QStringLiteral("30 MHz wide")).has_value());
     QVERIFY(!parseFrequency(QStringLiteral("-30M")).has_value());
     QVERIFY(!parseFrequency(QString{}).has_value());
+}
+
+void CommandLineTest::frequenciesBeyondTheRepresentableRangeAreRefused()
+{
+    // A suffix turns a short, plausible-looking argument into one that does not
+    // fit the int64 Hertz holds. These used to saturate to INT64_MAX, which
+    // start-below-stop then happily accepted as a span.
+    QVERIFY(!parseFrequency(QStringLiteral("1e30G")).has_value());
+    QVERIFY(!parseFrequency(QStringLiteral("1e10G")).has_value());
+    QVERIFY(!parseFrequency(QStringLiteral("1e300")).has_value());
+
+    // The boundary: 2^63 hertz does not fit, the largest double below it does.
+    QVERIFY(!parseFrequency(QStringLiteral("9223372036854775808")).has_value());
+    QVERIFY(parseFrequency(QStringLiteral("9223372036854774784")).has_value());
 }
 
 void CommandLineTest::durationsTakeTheUsualSuffixes()

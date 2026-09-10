@@ -105,16 +105,24 @@ Result<Hertz> parseFrequency(const QString& text)
     }
 
     const auto suffix = match.captured(2).toLower();
+    double scale = 1.0;
     if (suffix == QStringLiteral("k")) {
-        return kilohertz(value);
+        scale = 1e3;
+    } else if (suffix == QStringLiteral("m")) {
+        scale = 1e6;
+    } else if (suffix == QStringLiteral("g")) {
+        scale = 1e9;
     }
-    if (suffix == QStringLiteral("m")) {
-        return megahertz(value);
+
+    // Scaled, not handed to kilohertz() and friends: the suffix is what makes a
+    // plausible-looking number impossible, and 1e30G has to be refused here
+    // rather than saturated into a span the run would then accept.
+    const auto frequency = checkedHertz(value * scale);
+    if (!frequency) {
+        return usage(
+            QStringLiteral("'%1' is beyond the highest frequency PeakEmi can represent").arg(text));
     }
-    if (suffix == QStringLiteral("g")) {
-        return gigahertz(value);
-    }
-    return Hertz{static_cast<std::int64_t>(std::llround(value))};
+    return *frequency;
 }
 
 Result<std::chrono::milliseconds> parseDuration(const QString& text)

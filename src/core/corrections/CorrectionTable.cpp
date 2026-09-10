@@ -80,6 +80,21 @@ double CorrectionTable::contributionAt(Hertz frequency) const
     return enabled ? correctionSign(kind) * valueAt(frequency) : 0.0;
 }
 
+Status CorrectionTable::validate() const
+{
+    for (const auto& [frequency, value] : points) {
+        if (frequency <= Hertz{0}) {
+            return fail(ErrorCode::InvalidConfiguration,
+                        "correction table '" + name + "' has a non-positive frequency");
+        }
+        if (!std::isfinite(value)) {
+            return fail(ErrorCode::InvalidConfiguration,
+                        "correction table '" + name + "' has a non-finite value");
+        }
+    }
+    return {};
+}
+
 void CorrectionTable::sortPoints()
 {
     std::stable_sort(points.begin(),

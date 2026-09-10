@@ -1,5 +1,6 @@
 #pragma once
 
+#include <peakemi/core/Error.h>
 #include <peakemi/core/Trace.h>
 #include <peakemi/core/Units.h>
 
@@ -44,6 +45,14 @@ struct CorrectionTable
 
     /// Signed contribution to the corrected amplitude (gain already negated).
     [[nodiscard]] double contributionAt(Hertz frequency) const;
+
+    /// Rejects a table that cannot be applied to a reading.
+    ///
+    /// A correction is added to every amplitude, so one non-finite value does
+    /// not corrupt a single point -- it makes the whole run's margins NaN, and
+    /// a NaN margin is classified Unknown rather than Fail. That turns a
+    /// failing scan into an exit code of 0. Refuse the table instead.
+    [[nodiscard]] Status validate() const;
 
     void sortPoints();
 
